@@ -19,6 +19,19 @@ using System.Globalization;
 
 namespace KinectServer
 {
+
+    public struct Frame
+    {
+        public List<Single> Vertices;
+        public List<byte> RGB;
+        public List<Body> Bodies;
+
+        public Frame(List<Single> vertsin, List<byte> rgbin, List<Body> bodiesin){
+            Vertices = vertsin;
+            RGB = rgbin;
+            Bodies = bodiesin;
+        }
+    }
     public struct Point2f
     {
         public float X;

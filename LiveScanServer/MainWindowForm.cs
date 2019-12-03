@@ -32,6 +32,8 @@ using System.Net.Sockets;
 using System.Timers;
 
 using System.Diagnostics;
+ 
+using System.Xml.Serialization; 
 
 
 namespace KinectServer
@@ -66,6 +68,8 @@ namespace KinectServer
         KinectSettings oSettings = new KinectSettings();
         //The live view window class
         OpenGLWindow oOpenGLWindow;
+
+        List<Frame> LocalFrames = new List<Frame>();
 
         public MainWindowForm()
         {
@@ -113,12 +117,18 @@ namespace KinectServer
                 oServer.StartServer();
                 oTransferServer.StartServer();
                 btStart.Text = "Stop server";
+
+                frameCounter = 0;
+                LocalFrames = LoadFrames();
             }
             else
             {
                 oServer.StopServer();
                 oTransferServer.StopServer();
                 btStart.Text = "Start server";
+                
+                frameCounter = 0;
+                LocalFrames.Clear();
             }
         }
 
@@ -128,7 +138,7 @@ namespace KinectServer
             SettingsForm form = new SettingsForm();
             form.oSettings = oSettings;
             form.oServer = oServer;
-            form.Show();            
+            form.Show();
         }
 
         //Performs recording which is synchronized frame capture.
@@ -153,7 +163,7 @@ namespace KinectServer
             //After recording has been terminated it is time to begin saving the frames.
             //Saving is downloading the frames from clients and saving them locally.
             bSaving = true;
-            
+
             btRecord.Text = "Stop saving";
             btRecord.Enabled = true;
 
@@ -216,7 +226,7 @@ namespace KinectServer
 
                 SetStatusBarOnTimer("Saving frame " + (nFrames).ToString() + ".", 5000);
                 for (int i = 0; i < lFrameRGBAllDevices.Count; i++)
-                {                                 
+                {
                     lFrameRGB.AddRange(lFrameRGBAllDevices[i]);
                     lFrameVerts.AddRange(lFrameVertsAllDevices[i]);
 
@@ -224,7 +234,7 @@ namespace KinectServer
                     if (!oSettings.bMergeScansForSave)
                     {
                         string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".ply";
-                        Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], oSettings.bSaveAsBinaryPLY);                        
+                        Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], oSettings.bSaveAsBinaryPLY);
                     }
                 }
 
@@ -252,6 +262,8 @@ namespace KinectServer
             btCalibrate.Enabled = true;
         }
 
+        private int frameCounter = 0;
+
         //Continually requests frames that will be displayed in the live view window.
         private void updateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -265,6 +277,8 @@ namespace KinectServer
                 Thread.Sleep(1);
                 oServer.GetLatestFrame(lFramesRGB, lFramesVerts, lFramesBody);
 
+                
+
                 //Update the vertex and color lists that are common between this class and the OpenGLWindow.
                 lock (lAllVertices)
                 {
@@ -275,9 +289,23 @@ namespace KinectServer
 
                     for (int i = 0; i < lFramesRGB.Count; i++)
                     {
+
+                        /*
+                        if (frameCounter < 20)
+                        {
+                            ExportFrame(lFramesVerts[i], lFramesRGB[i], lFramesBody[i]);
+                        }
+                        */
                         lAllVertices.AddRange(lFramesVerts[i]);
                         lAllColors.AddRange(lFramesRGB[i]);
-                        lAllBodies.AddRange(lFramesBody[i]);                       
+                        lAllBodies.AddRange(lFramesBody[i]);
+
+                        var frame = LocalFrames[frameCounter % LocalFrames.Count];
+                        lAllColors.AddRange(frame.RGB);
+                        lAllVertices.AddRange(frame.Vertices);
+                        lAllBodies.AddRange(frame.Bodies);
+
+                        frameCounter++;
                     }
 
                     lAllCameraPoses.AddRange(oServer.lCameraPoses);
@@ -285,8 +313,40 @@ namespace KinectServer
 
                 //Notes the fact that a new frame was downloaded, this is used to estimate the FPS.
                 if (oOpenGLWindow != null)
-                    oOpenGLWindow.CloudUpdateTick();            
+                    oOpenGLWindow.CloudUpdateTick();
             }
+        }
+
+        private void ExportFrame(List<Single> lFramesVerts, List<byte> lFramesRGB, List<Body> lFramesBody)
+        {
+
+            var frame = new Frame(lFramesVerts, lFramesRGB, lFramesBody);
+
+            XmlSerializer serializer = new XmlSerializer(typeof(Frame));
+
+            using(StreamWriter file = new StreamWriter($"frames\\{frameCounter}.frame")){ 
+                serializer.Serialize(file, frame);
+            }
+        }
+
+        private List<Frame> LoadFrames(){
+
+            List<Frame> frames = new List<Frame>();
+
+            foreach (string fileName in Directory.EnumerateFiles("frames", "*.frame"))
+            {
+                Frame frame; 
+                XmlSerializer serializer = new XmlSerializer(typeof(Frame));
+            
+                using(StreamReader file = new StreamReader(fileName)){ 
+                    frame = (Frame)serializer.Deserialize(file);
+                }  
+
+                frames.Add(frame);
+            }
+
+            return frames;
+                      
         }
         
         //Performs the ICP based pose refinement.
