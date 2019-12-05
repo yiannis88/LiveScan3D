@@ -277,8 +277,6 @@ namespace KinectServer
                 Thread.Sleep(1);
                 oServer.GetLatestFrame(lFramesRGB, lFramesVerts, lFramesBody);
 
-                
-
                 //Update the vertex and color lists that are common between this class and the OpenGLWindow.
                 lock (lAllVertices)
                 {
@@ -301,6 +299,9 @@ namespace KinectServer
                         lAllBodies.AddRange(lFramesBody[i]);
 
                         var frame = LocalFrames[frameCounter % LocalFrames.Count];
+                        
+                        frame.Vertices = Transformer.Apply3DTransform(frame.Vertices, Transformer.GetYRotationTransform(90));
+
                         lAllColors.AddRange(frame.RGB);
                         lAllVertices.AddRange(frame.Vertices);
                         lAllBodies.AddRange(frame.Bodies);
