@@ -26,11 +26,13 @@ namespace KinectServer
         public List<Single> Vertices;
         public List<byte> RGB;
         public List<Body> Bodies;
+        public List<AffineTransform> CameraPoses;
 
-        public Frame(List<Single> vertsin, List<byte> rgbin, List<Body> bodiesin){
+        public Frame(List<Single> vertsin, List<byte> rgbin, List<Body> bodiesin, List<AffineTransform> cameraPosesin){
             Vertices = vertsin;
             RGB = rgbin;
             Bodies = bodiesin;
+            CameraPoses = cameraPosesin;
         }
     }
     public struct Point2f
@@ -153,7 +155,7 @@ namespace KinectServer
             return verts;
         }
 
-        public static AffineTransform GetXRotationTransform(int degrees)
+        public static AffineTransform GetXRotationTransform(float degrees)
         {
             float rad = degrees * (float)Math.PI / 180.0f;
             var transform = new AffineTransform();
@@ -164,7 +166,7 @@ namespace KinectServer
             return transform;
         }
 
-        public static AffineTransform GetYRotationTransform(int degrees)
+        public static AffineTransform GetYRotationTransform(float degrees)
         {
             float rad = degrees * (float)Math.PI / 180.0f;
             var transform = new AffineTransform();
@@ -175,7 +177,7 @@ namespace KinectServer
             return transform;
         }
 
-        public static AffineTransform GetZRotationTransform(int degrees)
+        public static AffineTransform GetZRotationTransform(float degrees)
         {
             float rad = degrees * (float)Math.PI / 180.0f;
             var transform = new AffineTransform();

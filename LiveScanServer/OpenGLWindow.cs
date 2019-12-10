@@ -62,6 +62,9 @@ namespace KinectServer
         float[] cameraPosition = new float[3];
         float[] targetPosition = new float[3];
 
+        public List<Frame> clientFrames = new List<Frame>();
+        public DisplayFrameTransformer transformer = new DisplayFrameTransformer(clienFrames.Count);
+
         public List<float> vertices = new List<float>();
         public List<byte> colors = new List<byte>();
         public List<AffineTransform> cameraPoses = new List<AffineTransform>();

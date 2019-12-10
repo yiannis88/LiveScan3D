@@ -119,7 +119,7 @@ namespace KinectServer
                 btStart.Text = "Stop server";
 
                 frameCounter = 0;
-                LocalFrames = LoadFrames();
+                if(!dumpFrames) LocalFrames = LoadFrames();
             }
             else
             {
@@ -263,7 +263,7 @@ namespace KinectServer
         }
 
         private int frameCounter = 0;
-
+        private bool dumpFrames = false;
         //Continually requests frames that will be displayed in the live view window.
         private void updateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -285,31 +285,30 @@ namespace KinectServer
                     lAllBodies.Clear();
                     lAllCameraPoses.Clear();
 
+                    //Pass frame to opengl window
                     for (int i = 0; i < lFramesRGB.Count; i++)
                     {
-
-                        /*
-                        if (frameCounter < 20)
-                        {
-                            ExportFrame(lFramesVerts[i], lFramesRGB[i], lFramesBody[i]);
-                        }
-                        */
                         lAllVertices.AddRange(lFramesVerts[i]);
                         lAllColors.AddRange(lFramesRGB[i]);
                         lAllBodies.AddRange(lFramesBody[i]);
+                    }
+                    lAllCameraPoses.AddRange(oServer.lCameraPoses);
 
-                        var frame = LocalFrames[frameCounter % LocalFrames.Count];
-                        
-                        frame.Vertices = Transformer.Apply3DTransform(frame.Vertices, Transformer.GetYRotationTransform(90));
-
-                        lAllColors.AddRange(frame.RGB);
-                        lAllVertices.AddRange(frame.Vertices);
-                        lAllBodies.AddRange(frame.Bodies);
-
-                        frameCounter++;
+                    //FOR TESTING, serialize frames to disk for later loading
+                    if (dumpFrames && frameCounter < 20)
+                    {
+                        ExportFrame(lAllVertices, lAllColors, lFramesBody, lAllCameraPoses);
                     }
 
-                    lAllCameraPoses.AddRange(oServer.lCameraPoses);
+                    //Add local frames
+                    var frame = LocalFrames[frameCounter % LocalFrames.Count];
+                    frame.Vertices = Transformer.Apply3DTransform(frame.Vertices, Transformer.GetYRotationTransform(90));
+
+                    lAllColors.AddRange(frame.RGB);
+                    lAllVertices.AddRange(frame.Vertices);
+                    lAllBodies.AddRange(frame.Bodies);
+
+                    frameCounter++;
                 }
 
                 //Notes the fact that a new frame was downloaded, this is used to estimate the FPS.
@@ -318,10 +317,10 @@ namespace KinectServer
             }
         }
 
-        private void ExportFrame(List<Single> lFramesVerts, List<byte> lFramesRGB, List<Body> lFramesBody)
+        private void ExportFrame(List<Single> lFramesVerts, List<byte> lFramesRGB, List<Body> lFramesBody, List<AffineTransform> lCameraPoses)
         {
 
-            var frame = new Frame(lFramesVerts, lFramesRGB, lFramesBody);
+            var frame = new Frame(lFramesVerts, lFramesRGB, lFramesBody, lCameraPoses);
 
             XmlSerializer serializer = new XmlSerializer(typeof(Frame));
 
