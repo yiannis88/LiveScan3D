@@ -56,6 +56,8 @@ namespace KinectServer
         //Body data from all of the sensors
         List<Body> lAllBodies = new List<Body>();
 
+        List<Frame> lClientFrames = new List<Frame>();
+
         bool bServerRunning = false;
         bool bRecording = false;
         bool bSaving = false;
@@ -119,7 +121,7 @@ namespace KinectServer
                 btStart.Text = "Stop server";
 
                 frameCounter = 0;
-                if(!dumpFrames) LocalFrames = LoadFrames();
+                LocalFrames = LoadFrames();
             }
             else
             {
@@ -179,6 +181,8 @@ namespace KinectServer
             //The variables below are shared between this class and the OpenGLWindow.
             lock (lAllVertices)
             {
+                oOpenGLWindow.clientFrames = lClientFrames;
+
                 oOpenGLWindow.vertices = lAllVertices;
                 oOpenGLWindow.colors = lAllColors;
                 oOpenGLWindow.cameraPoses = lAllCameraPoses;
@@ -263,7 +267,6 @@ namespace KinectServer
         }
 
         private int frameCounter = 0;
-        private bool dumpFrames = false;
         //Continually requests frames that will be displayed in the live view window.
         private void updateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -277,54 +280,66 @@ namespace KinectServer
                 Thread.Sleep(1);
                 oServer.GetLatestFrame(lFramesRGB, lFramesVerts, lFramesBody);
 
-                //Update the vertex and color lists that are common between this class and the OpenGLWindow.
-                lock (lAllVertices)
+                var liveFrame = new Frame(new List<Single>(), new List<byte>(), new List<Body>(), 0);
+                for (int i = 0; i < lFramesRGB.Count; i++)
                 {
-                    lAllVertices.Clear();
-                    lAllColors.Clear();
-                    lAllBodies.Clear();
-                    lAllCameraPoses.Clear();
-
-                    //Pass frame to opengl window
-                    for (int i = 0; i < lFramesRGB.Count; i++)
-                    {
-                        lAllVertices.AddRange(lFramesVerts[i]);
-                        lAllColors.AddRange(lFramesRGB[i]);
-                        lAllBodies.AddRange(lFramesBody[i]);
-                    }
-                    lAllCameraPoses.AddRange(oServer.lCameraPoses);
-
-                    //FOR TESTING, serialize frames to disk for later loading
-                    if (dumpFrames && frameCounter < 20)
-                    {
-                        ExportFrame(lAllVertices, lAllColors, lFramesBody, lAllCameraPoses);
-                    }
-
-                    //Add local frames
-                    var frame = LocalFrames[frameCounter % LocalFrames.Count];
-                    frame.Vertices = Transformer.Apply3DTransform(frame.Vertices, Transformer.GetYRotationTransform(90));
-
-                    lAllColors.AddRange(frame.RGB);
-                    lAllVertices.AddRange(frame.Vertices);
-                    lAllBodies.AddRange(frame.Bodies);
-
-                    frameCounter++;
+                    liveFrame.Vertices.AddRange(lFramesVerts[i]);
+                    liveFrame.RGB.AddRange(lFramesRGB[i]);
+                    liveFrame.Bodies.AddRange(lFramesBody[i]);
                 }
 
+                oOpenGLWindow.AddClientFrame(liveFrame);
+
+                var localFrame = LocalFrames[frameCounter % LocalFrames.Count];
+                oOpenGLWindow.AddClientFrame(localFrame);
+
+                //Update the vertex and color lists that are common between this class and the OpenGLWindow.
+                //lock (lAllVertices)
+                //{
+                //    lAllVertices.Clear();
+                //    lAllColors.Clear();
+                //    lAllBodies.Clear();
+                //    lAllCameraPoses.Clear();
+
+                //    //Pass frame to opengl window
+                //    for (int i = 0; i < lFramesRGB.Count; i++)
+                //    {
+                //        lAllVertices.AddRange(lFramesVerts[i]);
+                //        lAllColors.AddRange(lFramesRGB[i]);
+                //        lAllBodies.AddRange(lFramesBody[i]);
+                //    }
+                //    lAllCameraPoses.AddRange(oServer.lCameraPoses);
+
+                //    //if (frameCounter < 30)
+                //    //{
+                //    //    ExportFrame(lAllVertices, lAllColors, lAllBodies);//, oServer.lCameraPoses);
+                //    //}
+
+                //    //Add local frames
+                //    var frame = LocalFrames[frameCounter % LocalFrames.Count];
+                //    frame.Vertices = Transformer.Apply3DTransform(frame.Vertices, Transformer.GetYRotationTransform(90));
+
+                //    lAllColors.AddRange(frame.RGB);
+                //    lAllVertices.AddRange(frame.Vertices);
+                //    lAllBodies.AddRange(frame.Bodies);
+
+                //}
+
+                frameCounter++;
                 //Notes the fact that a new frame was downloaded, this is used to estimate the FPS.
                 if (oOpenGLWindow != null)
                     oOpenGLWindow.CloudUpdateTick();
             }
         }
 
-        private void ExportFrame(List<Single> lFramesVerts, List<byte> lFramesRGB, List<Body> lFramesBody, List<AffineTransform> lCameraPoses)
+        private void ExportFrame(List<Single> lFramesVerts, List<byte> lFramesRGB, List<Body> lFramesBody)//, List<AffineTransform> lCameraPoses)
         {
 
-            var frame = new Frame(lFramesVerts, lFramesRGB, lFramesBody, lCameraPoses);
+            var frame = new Frame(lFramesVerts, lFramesRGB, lFramesBody, 1);//, lCameraPoses);
 
             XmlSerializer serializer = new XmlSerializer(typeof(Frame));
 
-            using(StreamWriter file = new StreamWriter($"frames\\{frameCounter}.frame")){ 
+            using(TextWriter file = new StreamWriter($"frames\\{frameCounter}.xml")){ 
                 serializer.Serialize(file, frame);
             }
         }
@@ -333,7 +348,7 @@ namespace KinectServer
 
             List<Frame> frames = new List<Frame>();
 
-            foreach (string fileName in Directory.EnumerateFiles("frames", "*.frame"))
+            foreach (string fileName in Directory.EnumerateFiles("frames", "*.xml"))
             {
                 Frame frame; 
                 XmlSerializer serializer = new XmlSerializer(typeof(Frame));

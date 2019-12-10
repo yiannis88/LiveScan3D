@@ -1,9 +1,10 @@
 
 using System;
+using System.Collections.Generic;
 
 namespace KinectServer
 {
-    public class DisplayFrameTransformer(){
+    public class DisplayFrameTransformer{
     
         public DisplayFrameTransformer(int clientCount){
             ClientCount = clientCount;
@@ -15,7 +16,7 @@ namespace KinectServer
         public List<AffineTransform> Transforms {
             get {
                 var transforms = new List<AffineTransform>();
-                foreach(int clientNumber in ClientCount){
+                for(int clientNumber = 0; clientNumber < ClientCount; clientNumber++){
                     transforms.Add(GetClientTransform(clientNumber));
                 }
                 return transforms;
@@ -24,10 +25,10 @@ namespace KinectServer
 
         public AffineTransform GetClientTransform(int clientNumber){
             if (clientNumber >= ClientCount) {
-                thrown new IndexOutOfRangeException($"{clientNumber} greater than client count of {ClientCount}");
+                throw new IndexOutOfRangeException($"{clientNumber} greater than client count of {ClientCount}");
             }
             if (clientNumber < 0) {
-                thrown new IndexOutOfRangeException($"{clientNumber} less than 0");
+                throw new IndexOutOfRangeException($"{clientNumber} less than 0");
             }
 
             float rotationDegrees = (clientNumber / ClientCount) * 360;

@@ -26,13 +26,16 @@ namespace KinectServer
         public List<Single> Vertices;
         public List<byte> RGB;
         public List<Body> Bodies;
-        public List<AffineTransform> CameraPoses;
+        public int ClientID;
+        //public List<AffineTransform> CameraPoses;
 
-        public Frame(List<Single> vertsin, List<byte> rgbin, List<Body> bodiesin, List<AffineTransform> cameraPosesin){
+        public Frame(List<Single> vertsin, List<byte> rgbin, List<Body> bodiesin, int clientID)//, List<AffineTransform> cameraPosesin)
+        {
             Vertices = vertsin;
             RGB = rgbin;
             Bodies = bodiesin;
-            CameraPoses = cameraPosesin;
+            ClientID = clientID;
+            //CameraPoses = cameraPosesin;
         }
     }
     public struct Point2f
