@@ -287,45 +287,17 @@ namespace KinectServer
                     liveFrame.RGB.AddRange(lFramesRGB[i]);
                     liveFrame.Bodies.AddRange(lFramesBody[i]);
                 }
+                lAllCameraPoses.AddRange(oServer.lCameraPoses);
 
-                oOpenGLWindow.AddClientFrame(liveFrame);
+                if(oOpenGLWindow != null) oOpenGLWindow.AddClientFrame(liveFrame);
 
-                var localFrame = LocalFrames[frameCounter % LocalFrames.Count];
-                oOpenGLWindow.AddClientFrame(localFrame);
+                if (LocalFrames.Count > 0)
+                {
+                    var localFrame = LocalFrames[frameCounter % LocalFrames.Count];
+                    if (oOpenGLWindow != null) oOpenGLWindow.AddClientFrame(localFrame);
+                    frameCounter++;
+                }
 
-                //Update the vertex and color lists that are common between this class and the OpenGLWindow.
-                //lock (lAllVertices)
-                //{
-                //    lAllVertices.Clear();
-                //    lAllColors.Clear();
-                //    lAllBodies.Clear();
-                //    lAllCameraPoses.Clear();
-
-                //    //Pass frame to opengl window
-                //    for (int i = 0; i < lFramesRGB.Count; i++)
-                //    {
-                //        lAllVertices.AddRange(lFramesVerts[i]);
-                //        lAllColors.AddRange(lFramesRGB[i]);
-                //        lAllBodies.AddRange(lFramesBody[i]);
-                //    }
-                //    lAllCameraPoses.AddRange(oServer.lCameraPoses);
-
-                //    //if (frameCounter < 30)
-                //    //{
-                //    //    ExportFrame(lAllVertices, lAllColors, lAllBodies);//, oServer.lCameraPoses);
-                //    //}
-
-                //    //Add local frames
-                //    var frame = LocalFrames[frameCounter % LocalFrames.Count];
-                //    frame.Vertices = Transformer.Apply3DTransform(frame.Vertices, Transformer.GetYRotationTransform(90));
-
-                //    lAllColors.AddRange(frame.RGB);
-                //    lAllVertices.AddRange(frame.Vertices);
-                //    lAllBodies.AddRange(frame.Bodies);
-
-                //}
-
-                frameCounter++;
                 //Notes the fact that a new frame was downloaded, this is used to estimate the FPS.
                 if (oOpenGLWindow != null)
                     oOpenGLWindow.CloudUpdateTick();

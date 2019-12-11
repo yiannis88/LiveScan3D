@@ -414,17 +414,17 @@ namespace KinectServer
 
                     VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
 
-                    //transformer.ClientCount = clientCount;
+                    transformer.ClientCount = clientCount;
 
                     int lastFrameCount = 0;
                     for (int counter = 0; counter < clientCount; counter++)
                     {
                         var clientFrame = clientFrames[counter];
-                        //clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(counter));
+                        clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(counter));
 
                         for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)
                         {
-                            var j = i;// + lastFrameCount;
+                            var j = i + lastFrameCount;
                             VBO[j].R = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3] + brightnessModifier)));
                             VBO[j].G = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 1] + brightnessModifier)));
                             VBO[j].B = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 2] + brightnessModifier)));
