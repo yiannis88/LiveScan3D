@@ -181,8 +181,6 @@ namespace KinectServer
             //The variables below are shared between this class and the OpenGLWindow.
             lock (lAllVertices)
             {
-                oOpenGLWindow.clientFrames = lClientFrames;
-
                 oOpenGLWindow.vertices = lAllVertices;
                 oOpenGLWindow.colors = lAllColors;
                 oOpenGLWindow.cameraPoses = lAllCameraPoses;

@@ -62,8 +62,9 @@ namespace KinectServer
         float[] cameraPosition = new float[3];
         float[] targetPosition = new float[3];
 
-        public List<Frame> clientFrames = new List<Frame>();
-        public DisplayFrameTransformer transformer = new DisplayFrameTransformer(0);
+        public Dictionary<int, Frame> clientFrames = new Dictionary<int, Frame>();
+        public int SelectedFigure = -1;
+        public DisplayFrameTransformer transformer = new DisplayFrameTransformer();
 
         public List<float> vertices = new List<float>();
         public List<byte> colors = new List<byte>();
@@ -105,6 +106,8 @@ namespace KinectServer
             targetPosition[0] = 0;
             targetPosition[1] = 0;
             targetPosition[2] = 0;
+
+            transformer.ClientFrames = clientFrames;
         }
 
         public void CloudUpdateTick()
@@ -165,6 +168,71 @@ namespace KinectServer
                 brightnessModifier = (byte)Math.Max(0, brightnessModifier - 10);
             if (keyboard[Key.P])
                 brightnessModifier = (byte)Math.Min(255, brightnessModifier + 10);
+
+            if (keyboard[Key.I])
+                SelectNextFigure();
+            if (keyboard[Key.Y])
+                SelectPrevFigure();
+
+            int movementScale = 1;
+            if (keyboard[Key.U])
+                AddTranslation(0, 0, movementScale);
+            if (keyboard[Key.H])
+                AddTranslation(movementScale, 0, 0);
+            if (keyboard[Key.J])
+                AddTranslation(0, 0, -movementScale);
+            if (keyboard[Key.K])
+                AddTranslation(-movementScale, 0, 0);
+
+            if (keyboard[Key.R])
+                if (keyboard[Key.ShiftLeft])
+                    transformer.ResetAllClients();
+                else
+                    ResetFigure();
+
+            if (keyboard[Key.B])
+                AddRotation(10);
+            if (keyboard[Key.N])
+                AddRotation(-10);
+        }
+
+        protected void SelectNextFigure()
+        {
+            if (clientFrames.Count > 0)
+            {
+                if (SelectedFigure == -1)
+                {
+                    SelectedFigure = clientFrames.Keys.ToList()[0];
+                }
+                else
+                {
+                    if (clientFrames.Count > 1)
+                    {
+                        var ClientIDs = clientFrames.Keys.ToList();
+                        var keyIndex = ClientIDs.FindIndex(x => x == SelectedFigure);
+                        SelectedFigure = ClientIDs[(keyIndex + 1) % ClientIDs.Count];
+                    }
+                }
+            }
+        }
+        protected void SelectPrevFigure()
+        {
+        }
+
+        protected void AddRotation(float degrees)
+        {
+            if (SelectedFigure != -1)
+                transformer.RotateClient(SelectedFigure, degrees);
+        }
+        protected void AddTranslation(float x, float y, float z)
+        {
+            if (SelectedFigure != -1)
+                transformer.TranslateClient(SelectedFigure, x, y, z);
+        }
+        protected void ResetFigure()
+        {
+            if (SelectedFigure != -1)
+                transformer.ResetClient(SelectedFigure);
         }
 
         /// <summary>Load resources here.</summary>
@@ -318,21 +386,7 @@ namespace KinectServer
         {
             lock (clientFrames)
             {
-                bool clientPresent = false;
-                for (int counter = 0; counter < clientFrames.Count; counter++)
-                {
-                    var clientFrame = clientFrames[counter];
-                    if (clientFrame.ClientID == frame.ClientID)
-                    {
-                        clientFrames[counter] = frame;
-                        clientPresent = true;
-                        break;
-                    }
-                }
-                if (!clientPresent)
-                {
-                    clientFrames.Add(frame);
-                }
+                clientFrames[frame.ClientID] = frame;
             }
         }
 
@@ -343,7 +397,7 @@ namespace KinectServer
                 lock (clientFrames)
                 {
                     int count = 0;
-                    foreach (Frame frame in clientFrames)
+                    foreach (Frame frame in clientFrames.Values)
                     {
                         count += frame.Vertices.Count / 3;
                     }
@@ -359,7 +413,7 @@ namespace KinectServer
                 lock (clientFrames)
                 {
                     int count = 0;
-                    foreach (Frame frame in clientFrames)
+                    foreach (Frame frame in clientFrames.Values)
                     {
                         count += frame.Bodies.Count;
                     }
@@ -414,13 +468,11 @@ namespace KinectServer
 
                     VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
 
-                    transformer.ClientCount = clientCount;
-
                     int lastFrameCount = 0;
-                    for (int counter = 0; counter < clientCount; counter++)
+                    foreach (int clientNumber in clientFrames.Keys)
                     {
-                        var clientFrame = clientFrames[counter];
-                        clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(counter));
+                        var clientFrame = clientFrames[clientNumber];
+                        clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(clientFrame.ClientID));
 
                         for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)
                         {
