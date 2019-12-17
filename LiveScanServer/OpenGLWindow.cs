@@ -191,9 +191,9 @@ namespace KinectServer
                     ResetFigure();
 
             if (keyboard[Key.B])
-                AddRotation(10);
+                AddRotation(0, 10, 0);
             if (keyboard[Key.N])
-                AddRotation(-10);
+                AddRotation(0, -10, 0);
         }
 
         protected void SelectNextFigure()
@@ -219,10 +219,10 @@ namespace KinectServer
         {
         }
 
-        protected void AddRotation(float degrees)
+        protected void AddRotation(float x, float y, float z)
         {
             if (SelectedFigure != -1)
-                transformer.RotateClient(SelectedFigure, degrees);
+                transformer.RotateClient(SelectedFigure, x, y, z);
         }
         protected void AddTranslation(float x, float y, float z)
         {
@@ -472,6 +472,12 @@ namespace KinectServer
                     foreach (int clientNumber in clientFrames.Keys)
                     {
                         var clientFrame = clientFrames[clientNumber];
+                        /* normalising and 
+                        clientFrame.Vertices = Transformer.NormaliseAroundMean(clientFrame.Vertices);
+                        var translation = new AffineTransform();
+                        translation.t = new float[] { 2, 0, 0 };
+                        clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, translation);
+                        */
                         clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(clientFrame.ClientID));
 
                         for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)

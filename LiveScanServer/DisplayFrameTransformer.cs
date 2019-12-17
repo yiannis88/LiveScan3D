@@ -66,9 +66,12 @@ namespace KinectServer
             return ClientOverrides[clientNumber];
         }
 
-        public void RotateClient(int clientNumber, float degrees)
+        public void RotateClient(int clientNumber, float x, float y, float z)
         {
-            GetOverride(clientNumber).rotationY += degrees;
+            var tran = GetOverride(clientNumber);
+            tran.rotationX += x;
+            tran.rotationY += y;
+            tran.rotationZ += z;
         }
 
         public void TranslateClient(int clientNumber, float x, float y, float z)

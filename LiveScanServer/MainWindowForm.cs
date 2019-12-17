@@ -287,7 +287,7 @@ namespace KinectServer
                 }
                 lAllCameraPoses.AddRange(oServer.lCameraPoses);
 
-                if(oOpenGLWindow != null) oOpenGLWindow.AddClientFrame(liveFrame);
+                if (oOpenGLWindow != null) oOpenGLWindow.AddClientFrame(liveFrame);
 
                 if (LocalFrames.Count > 0)
                 {
