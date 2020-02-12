@@ -1,9 +1,27 @@
+/**
+* This class acts as the controller of source placement within the OpenGL window.
+*
+* The OpenGL window uses an instance of this class during rendering to retrieve the required transformation
+* to apply to each point cloud before composition for display
+*
+* By default, sources are arranged in a circle around the origin on a horizontal plane.
+*
+* Using keyboard controls the OpenGL window can pass commands to rotate and translate a particular client
+* Rotation and translation functions generate an override if this is the first transformation of the source
+*
+* An override defines the rotation and translation of a source in 3D and represents a user override of a sources display
+*
+* When the OpenGL window requests a sources transformation, a present override will be prioritised over the default method 
+*                                          
+* Andy Pack 2019 (5GIC, University of Surrey)                                           
+*/
 
 using System;
 using System.Collections.Generic;
 
 namespace KinectServer
 {
+    // ClientID === clientNumber
     public class DisplayFrameTransformer{
 
         public DisplayFrameTransformer(){}
@@ -11,12 +29,15 @@ namespace KinectServer
             ClientFrames = clientFrames;
         }
 
-        public Dictionary<int, Frame> ClientFrames;
+        // shared variable with OpenGL window containing live client frames indexed by clientNumber 
+        public Dictionary<int, Frame> ClientFrames { get; set; }
+        // also indexed by clientNumber
         private Dictionary<int, ClientPosition> ClientOverrides = new Dictionary<int, ClientPosition>();
 
         public int ClientCount { get { return ClientFrames.Count; } }
         public List<int> ClientIDs { get { return new List<int>(ClientFrames.Keys); } }
 
+        // degrees about origin for arbitrary client number, defines DEFAULT BEHAVIOUR prior to override
         private float GetDefaultRotationDegrees(int clientNumber)
         {
             var list = new List<int>(ClientFrames.Keys);
@@ -25,6 +46,7 @@ namespace KinectServer
             return ((float)list.IndexOf(clientNumber) / (float)ClientCount) * 360;
         }
 
+        // generate rotation transformation for arbitrary client using default rotation DEFAULT BEHAVIOUR
         public AffineTransform GetRotationMatrix(int clientNumber){
             if (clientNumber >= ClientCount)
             {
@@ -38,6 +60,7 @@ namespace KinectServer
             return Transformer.GetYRotationTransform(GetDefaultRotationDegrees(clientNumber));
         }
 
+        // get display ready transform for given client, generates either DEFAULT or OVERRIDE transform matrix
         public AffineTransform GetClientTransform(int clientNumber)
         {
             if (!ClientFrames.ContainsKey(clientNumber)) {
@@ -57,6 +80,7 @@ namespace KinectServer
             }
         }
 
+        // used during OVERRIDE update
         private ClientPosition GetOverride(int clientNumber)
         {
             if (!ClientOverrides.ContainsKey(clientNumber))
@@ -94,6 +118,7 @@ namespace KinectServer
 
     }
 
+// Position and rotation of source in 3D, used to define a source override
     public class ClientPosition
     {
         public int ClientID;

@@ -36,6 +36,7 @@ namespace KinectServer
             Bodies = bodiesin;
             ClientID = clientID;
             //CameraPoses = cameraPosesin;
+            // TODO fix serialization to allow back in
         }
     }
     public struct Point2f
@@ -193,6 +194,8 @@ namespace KinectServer
             return transform;
         }
 
+        // EXPERIMENTAL find mean of source for normalizing coordinates about centroid
+        // allow more intuitive placement in 3D
         public static Point3f FindMean(List<Single> verts)
         {
             if (verts.Count % 3 != 0)
@@ -221,6 +224,7 @@ namespace KinectServer
             return mean;
         }
 
+        // 3x3 matrix multiplication
         public static AffineTransform CompoundTransform(AffineTransform tran1, AffineTransform tran2)
         {
             AffineTransform compound = new AffineTransform
@@ -247,6 +251,7 @@ namespace KinectServer
             return compound;
         }
 
+        // EXPERIMENTAL normalise around mean to allow more intuitive placement of sources in space
         public static List<Single> NormaliseAroundMean(List<Single> verts)
         {
             if (verts.Count % 3 != 0)

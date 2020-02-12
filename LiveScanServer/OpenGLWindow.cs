@@ -54,8 +54,11 @@ namespace KinectServer
         float[] cameraPosition = new float[3];
         float[] targetPosition = new float[3];
 
+        // live storage of frames indexed by client ID
         public Dictionary<int, Frame> clientFrames = new Dictionary<int, Frame>();
+        // client id of currently selected source for control, -1 = none
         public int SelectedFigure = -1;
+        // object controlling placement of sources, used for retrieving transformations before display
         public DisplayFrameTransformer transformer = new DisplayFrameTransformer();
 
         public List<float> vertices = new List<float>();
@@ -99,6 +102,7 @@ namespace KinectServer
             targetPosition[1] = 0;
             targetPosition[2] = 0;
 
+            // share live client frames with transformer
             transformer.ClientFrames = clientFrames;
         }
 
@@ -188,6 +192,8 @@ namespace KinectServer
                 AddRotation(0, -10, 0);
         }
 
+        // SOURCE POSITION/ROTATION CONTROLS
+
         protected void SelectNextFigure()
         {
             if (clientFrames.Count > 0)
@@ -226,6 +232,8 @@ namespace KinectServer
             if (SelectedFigure != -1)
                 transformer.ResetClient(SelectedFigure);
         }
+
+        // END CONTROLS
 
         /// <summary>Load resources here.</summary>
         /// <param name="e">Not used.</param>
@@ -374,6 +382,7 @@ namespace KinectServer
             MousePrevious.Y = OpenTK.Input.Mouse.GetState().Y; //cuz Mouse.Y is obselete, hence I have to use Mouse.GetState().Y yanis May 2019
         }
 
+        // used by main window to supply display with live frames
         public void AddClientFrame(Frame frame)
         {
             lock (clientFrames)
@@ -461,15 +470,17 @@ namespace KinectServer
                     VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
 
                     int lastFrameCount = 0;
+                    // iterate through connected sources last frames
                     foreach (int clientNumber in clientFrames.Keys)
                     {
                         var clientFrame = clientFrames[clientNumber];
-                        /* normalising and 
+                        /*
                         clientFrame.Vertices = Transformer.NormaliseAroundMean(clientFrame.Vertices);
                         var translation = new AffineTransform();
                         translation.t = new float[] { 2, 0, 0 };
                         clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, translation);
                         */
+                        // get and apply transformation to correctly locate and orientate in space
                         clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(clientFrame.ClientID));
 
                         for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)
