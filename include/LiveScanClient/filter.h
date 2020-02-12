@@ -23,7 +23,7 @@ struct KNNeighborsResult
 {
 	std::vector<size_t> neighbors;
 	std::vector<float> distances;
-	float kDistance;
+	float kDistance = 0;
 };
 
 struct PointCloud

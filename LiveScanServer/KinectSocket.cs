@@ -12,13 +12,15 @@
 //        title={LiveScan3D: A Fast and Inexpensive 3D Data Acquisition System for Multiple Kinect v2 Sensors},
 //        year={2015},
 //    }
+//  The initial code has been significantly modified in order to support a buffer per client and correctly receive the frames.
+//  Comments or modifications (major) are made by Ioannis Selinis (5GIC University of Surrey, 2019)
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using System.Net;
 using System.Net.Sockets;
-
+using System.Threading.Tasks;
 
 namespace KinectServer
 {
@@ -27,9 +29,10 @@ namespace KinectServer
     public class KinectSocket
     {
         Socket oSocket;
+        BufferRxAlgorithm oBufferRxAlgorithm;
+
         byte[] byteToSend = new byte[1];
         public bool bFrameCaptured = false;
-        public bool bLatestFrameReceived = false;
         public bool bStoredFrameReceived = false;
         public bool bNoMoreStoredFrames = true;
         public bool bCalibrated = false;
@@ -42,59 +45,115 @@ namespace KinectServer
 
         public List<byte> lFrameRGB = new List<byte>();
         public List<Single> lFrameVerts = new List<Single>();
-        public List<Body> lBodies = new List<Body>(); 
+        public List<Body> lBodies = new List<Body>();
 
         public event SocketChangedHandler eChanged;
+        private bool debugFlag = true;
+
+        private int localPort = 0;
+        private int remotePort = 0;
+        private int clientIdSok = -1;
+
+        /* Public variables for stats */
+        public int storedFrameRxBytes = 0;
+        public int storedFrameCtr = 0;
+        public int lastFrameRxBytes = 0;
+        public int lastFrameCtr = 0;
 
         public KinectSocket(Socket clientSocket)
         {
             oSocket = clientSocket;
-            sSocketState = oSocket.RemoteEndPoint.ToString() + " Calibrated = false";
+
+            IPEndPoint _localIpEndPoint = oSocket.LocalEndPoint as IPEndPoint;
+            IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
+            localPort = _localIpEndPoint.Port;
+            remotePort = _remoteIpEndPoint.Port;
+        }
+
+        public void SetClientId(string clId, int clientId)
+        {
+            clientIdSok = clientId;
+            oBufferRxAlgorithm.SetClientIdPath(clId);
+        }
+
+        public void SetSocketStatus()
+        {
+            IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
+            if (clientIdSok > -1)
+                sSocketState = "Client: " + clientIdSok + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+            else
+                sSocketState = "\tIP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+
+            UpdateSocketState();
+        }
+
+        public void SetBufferRx(BufferRxAlgorithm bufferPtr)
+        {
+            oBufferRxAlgorithm = bufferPtr;
         }
 
         public void CaptureFrame()
         {
             bFrameCaptured = false;
-            byteToSend[0] = 0;
-            SendByte();
+            byteToSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_CAPTURE_FRAME;
+            SendByte(byteToSend);
         }
 
         public void Calibrate()
-        {            
+        {
+            Console.WriteLine("KinectSocket::Calibrate [1]: " + (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_CALIBRATE);
             bCalibrated = false;
-            sSocketState = oSocket.RemoteEndPoint.ToString() + " Calibrated = false";
+            IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
+            if (clientIdSok > -1)
+                sSocketState = "Client: " + clientIdSok + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+            else
+                sSocketState = "\tIP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
 
-            byteToSend[0] = 1;
-            SendByte();
+            byteToSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_CALIBRATE;
+            SendByte(byteToSend);
 
             UpdateSocketState();
         }
 
         public void SendSettings(KinectSettings settings)
         {
+            Console.WriteLine("KinectSocket::SendSettings [2]: " + (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_RECEIVE_SETTINGS + " " + settings.ToByteList().Count);
             List<byte> lData = settings.ToByteList();
 
             byte[] bTemp = BitConverter.GetBytes(lData.Count);
             lData.InsertRange(0, bTemp);
-            lData.Insert(0, 2);
+            lData.Insert(0, (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_RECEIVE_SETTINGS);
 
             if (SocketConnected())
-                oSocket.Send(lData.ToArray());
+                SendByte(lData.ToArray());
         }
 
         public void RequestStoredFrame()
         {
-            byteToSend[0] = 3;
-            SendByte();
-            bNoMoreStoredFrames = false;
-            bStoredFrameReceived = false;
+            try
+            {
+                byteToSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_REQUEST_STORED_FRAME;
+                SendByte(byteToSend);
+                bNoMoreStoredFrames = false;
+                bStoredFrameReceived = false;
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine("KinectSocket::RequestStoredFrame Exception Message: " + ex.ToString());
+            }
         }
 
         public void RequestLastFrame()
         {
-            byteToSend[0] = 4;
-            SendByte();
-            bLatestFrameReceived = false;
+            try
+            {
+                byteToSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_REQUEST_LAST_FRAME;
+                SendByte(byteToSend);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine("KinectSocket::RequestLastFrame Exception Message: " + ex.ToString());
+            }
         }
 
         public void SendCalibrationData()
@@ -103,7 +162,7 @@ namespace KinectServer
             byte[] data = new byte[size];
             int i = 0;
 
-            data[i] = 5;
+            data[i] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_RECEIVE_CALIBRATION;
             i++;
 
             Buffer.BlockCopy(oWorldTransform.R, 0, data, i, 9 * sizeof(float));
@@ -111,20 +170,20 @@ namespace KinectServer
             Buffer.BlockCopy(oWorldTransform.t, 0, data, i, 3 * sizeof(float));
             i += 3 * sizeof(float);
 
+            Console.WriteLine("KinectSocket::SendCalibrationData [4]: " + (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_RECEIVE_CALIBRATION);
+
             if (SocketConnected())
-                oSocket.Send(data);
+                SendByte(data);
         }
 
         public void ClearStoredFrames()
         {
-            byteToSend[0] = 6;
-            SendByte();
+            byteToSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_CLEAR_STORED_FRAMES;
+            SendByte(byteToSend);
         }
 
         public void ReceiveCalibrationData()
         {
-            bCalibrated = true;
-
             byte[] buffer = Receive(sizeof(int) * 1);
             //currently not used
             int markerId = BitConverter.ToInt32(buffer, 0);
@@ -144,121 +203,172 @@ namespace KinectServer
                     oCameraPose.t[i] += oWorldTransform.t[j] * oWorldTransform.R[i, j];
                 }
             }
-
-            UpdateSocketState();
         }
 
-        public void ReceiveFrame()
+        public async Task ReceiveFrame(int tsOffsetFromUtcTime)
         {
-            lFrameRGB.Clear();
-            lFrameVerts.Clear();
-            lBodies.Clear();
-
-            int nToRead;
-            byte[] buffer = new byte[1024];
-
-            while (oSocket.Available == 0)
+            try
             {
-                if (!SocketConnected())
-                    return;
-            }
-
-            oSocket.Receive(buffer, 8, SocketFlags.None);
-            nToRead = BitConverter.ToInt32(buffer, 0);
-            int iCompressed = BitConverter.ToInt32(buffer, 4);
-
-            if (nToRead == -1)
-            {
-                bNoMoreStoredFrames = true;
-                return;
-            }
-
-            buffer = new byte[nToRead];
-            int nAlreadyRead = 0;
-
-            while (nAlreadyRead != nToRead)
-            {
-                while (oSocket.Available == 0)
+                NetworkStream _stream = new NetworkStream(oSocket);
+                int hdr_indicator = 1, hdr_size = 4, hdr_compr = 4, hdr_ts = 4;
+                int hdrSize = hdr_indicator + hdr_size + hdr_compr + hdr_ts; //1 byte for indicating the frame type, 4 bytes for size, 4 bytes for compression, and 4 bytes for timestamp (UTC)
+                
+                while (SocketConnected())
                 {
-                    if (!SocketConnected())
-                        return;
-                }
+                    lFrameRGB.Clear();
+                    lFrameVerts.Clear();
+                    lBodies.Clear();
+                    int _bytesRead = 0;
+                    byte[] buffer = new byte[hdrSize];
 
-                nAlreadyRead += oSocket.Receive(buffer, nAlreadyRead, nToRead - nAlreadyRead, SocketFlags.None);
+                    while (_bytesRead < hdrSize)
+                    {
+                        int bytesRead = await _stream.ReadAsync(buffer, _bytesRead, hdrSize - _bytesRead);
+
+                        if (bytesRead == 0) throw new InvalidDataException("unexpected end-of-stream at header");
+                        _bytesRead += bytesRead;
+                    }
+
+                    int _hdrIndicator = buffer[0];
+                    int _dataLength = BitConverter.ToInt32(buffer, hdr_indicator);
+                    int iCompressed = BitConverter.ToInt32(buffer, hdr_indicator + hdr_size);
+                    int timestamp = BitConverter.ToInt32(buffer, hdr_indicator + hdr_size + hdr_compr);
+
+                    if (_hdrIndicator == (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_CONFIRM_CAPTURED)
+                    {
+                        bFrameCaptured = true;
+                        continue;
+                    }
+                    else if (_hdrIndicator == (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_CONFIRM_CALIBRATED)
+                    {
+                        bCalibrated = true;
+                        ReceiveCalibrationData();
+                        UpdateSocketState();
+                        continue;
+                    }
+                    //stored frame
+                    else if (_hdrIndicator == (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_SEND_STORED_FRAME)
+                    {
+                        bStoredFrameReceived = true;
+                        storedFrameRxBytes += _dataLength;
+                        storedFrameCtr++;
+                    }
+                    //last frame
+                    else if (_hdrIndicator == (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_SEND_LAST_FRAME)
+                    {
+                        lastFrameRxBytes += _dataLength;
+                        lastFrameCtr++;
+
+                    }
+                    //No frames available at the client
+                    else if (_hdrIndicator == (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_NO_FRAME)
+                    {
+                        //no frames available at the client --> do nothing (at least do not wait for frames dude)
+                        continue;
+                    }
+                    else
+                        throw new InvalidDataException("Buffer number " + buffer[0]);
+
+
+                    buffer = new byte[_dataLength];
+                    _bytesRead = 0;
+                    while (_bytesRead < _dataLength)
+                    {
+                        int bytesRead = await _stream.ReadAsync(buffer, _bytesRead, _dataLength - _bytesRead);
+
+                        if (bytesRead == 0) throw new InvalidDataException("unexpected end-of-stream");
+                        _bytesRead += bytesRead;
+                    }
+
+                    if (iCompressed == 1)
+                        buffer = ZSTDDecompressor.Decompress(buffer);
+
+                    List<byte> _lFrameRGB = new List<byte>();
+                    List<float> _lFrameVerts = new List<float>();
+                    List<Body> _lBodies = new List<Body>();
+
+                    //Receive depth and color data
+                    int startIdx = 0;
+
+                    int n_vertices = BitConverter.ToInt32(buffer, startIdx);
+                    startIdx += 4;
+                    //In total, we have 9 bytes per cloud point; with 3 bytes used for the color and 6 used for the position
+                    //The loops below read this information 
+                    for (int i = 0; i < n_vertices; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            _lFrameRGB.Add(buffer[startIdx++]);  //1-byte for color   ==> 3 iterations   ==> 3 bytes for color per point cloud           
+                        }
+                        for (int j = 0; j < 3; j++)
+                        {
+                            float val = BitConverter.ToInt16(buffer, startIdx);
+                            //converting from milimeters to meters
+                            val /= 1000.0f;
+                            _lFrameVerts.Add(val);
+                            startIdx += 2;     //2 bytes for position   ==> 3 iterations  ==> 6 bytes for positions per point cloud       
+                        }
+                    }
+
+                    //Receive body data
+                    //todo: inform client based on the settings if we want or not skeletons in live show!!! 
+                    //      If not, then do not transmit this information (reduce overhead)
+                   int nBodies = BitConverter.ToInt32(buffer, startIdx); // the remaining bytes (713B) are used for the skeleton information
+                   startIdx += 4;
+
+                    for (int i = 0; i < nBodies; i++)
+                    {
+                        Body tempBody = new Body();
+                        tempBody.bTracked = BitConverter.ToBoolean(buffer, startIdx++);
+                        int nJoints = BitConverter.ToInt32(buffer, startIdx);
+                        startIdx += 4;
+
+                        tempBody.lJoints = new List<Joint>(nJoints);
+                        tempBody.lJointsInColorSpace = new List<Point2f>(nJoints);
+                        for (int j = 0; j < nJoints; j++)
+                        {
+                            Joint tempJoint = new Joint();
+                            Point2f tempPoint = new Point2f();
+
+                            tempJoint.jointType = (JointType)BitConverter.ToInt32(buffer, startIdx);
+                            startIdx += 4;
+                            tempJoint.trackingState = (TrackingState)BitConverter.ToInt32(buffer, startIdx);
+                            startIdx += 4;
+                            tempJoint.position.X = BitConverter.ToSingle(buffer, startIdx);
+                            startIdx += 4;
+                            tempJoint.position.Y = BitConverter.ToSingle(buffer, startIdx);
+                            startIdx += 4;
+                            tempJoint.position.Z = BitConverter.ToSingle(buffer, startIdx);
+                            startIdx += 4;
+
+                            tempPoint.X = BitConverter.ToSingle(buffer, startIdx);
+                            startIdx += 4;
+                            tempPoint.Y = BitConverter.ToSingle(buffer, startIdx);
+                            startIdx += 4;
+
+                            tempBody.lJoints.Add(tempJoint);
+                            tempBody.lJointsInColorSpace.Add(tempPoint);
+                        }
+                        _lBodies.Add(tempBody);
+                    }
+
+                    //here we need to queue packets 
+                    if (_lFrameRGB.Count > 0)
+                    {
+                        oBufferRxAlgorithm.Enqueue(_lFrameRGB, _lFrameVerts, _lBodies, timestamp, _dataLength, remotePort, localPort, tsOffsetFromUtcTime);
+                    }
+                }
             }
-
-            
-
-
-            if (iCompressed == 1)
-                buffer = ZSTDDecompressor.Decompress(buffer);
-
-            //Receive depth and color data
-            int startIdx = 0;
-
-            int n_vertices = BitConverter.ToInt32(buffer, startIdx);
-            startIdx += 4;
-
-            for (int i = 0; i < n_vertices; i++)
+            catch(Exception ex)
             {
-                for (int j = 0; j < 3; j++)
-                {
-                    lFrameRGB.Add(buffer[startIdx++]);
-                }
-                for (int j = 0; j < 3; j++)
-                {
-                    float val = BitConverter.ToInt16(buffer, startIdx);
-                    //converting from milimeters to meters
-                    val /= 1000.0f;
-                    lFrameVerts.Add(val);
-                    startIdx += 2;
-                }
-            }
-
-            //Receive body data
-            int nBodies = BitConverter.ToInt32(buffer, startIdx);
-            startIdx += 4;
-            for (int i = 0; i < nBodies; i++)
-            {
-                Body tempBody = new Body();
-                tempBody.bTracked = BitConverter.ToBoolean(buffer, startIdx++);
-                int nJoints = BitConverter.ToInt32(buffer, startIdx);
-                startIdx += 4;
-
-                tempBody.lJoints = new List<Joint>(nJoints);
-                tempBody.lJointsInColorSpace = new List<Point2f>(nJoints);
-
-                for (int j = 0; j < nJoints; j++)
-                {
-                    Joint tempJoint = new Joint();
-                    Point2f tempPoint = new Point2f();
-
-                    tempJoint.jointType = (JointType)BitConverter.ToInt32(buffer, startIdx);
-                    startIdx += 4;
-                    tempJoint.trackingState = (TrackingState)BitConverter.ToInt32(buffer, startIdx);
-                    startIdx += 4;
-                    tempJoint.position.X = BitConverter.ToSingle(buffer, startIdx);
-                    startIdx += 4;
-                    tempJoint.position.Y = BitConverter.ToSingle(buffer, startIdx);
-                    startIdx += 4;
-                    tempJoint.position.Z = BitConverter.ToSingle(buffer, startIdx);
-                    startIdx += 4;
-
-                    tempPoint.X = BitConverter.ToSingle(buffer, startIdx);
-                    startIdx += 4;
-                    tempPoint.Y = BitConverter.ToSingle(buffer, startIdx);
-                    startIdx += 4;
-
-                    tempBody.lJoints.Add(tempJoint);
-                    tempBody.lJointsInColorSpace.Add(tempPoint);
-                }
-
-                lBodies.Add(tempBody);
+                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " Async Rx exception msg: " + ex.ToString());
             }
         }
 
         public byte[] Receive(int nBytes)
         {
+            if (debugFlag)
+                Console.WriteLine("KinectSocket::Receive() " + nBytes);
             byte[] buffer;
             if (oSocket.Available != 0)
             {
@@ -273,33 +383,91 @@ namespace KinectServer
 
         public bool SocketConnected()
         {
-            bool part1 = oSocket.Poll(1000, SelectMode.SelectRead);
-            bool part2 = (oSocket.Available == 0);
-
-            if (part1 && part2)
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return oSocket.Connected;
         }
 
-        private void SendByte()
+        /**
+         * For the time being the request or any frame other than the actual data is transmitted using a 1-byte header.
+         * Todo: A unified hdr needs to be applied for all signals/data transmitted (i.e. 13 bytes of header, with the 
+         * signal being the 1st byte and the rest null for the server)
+         */ 
+        private void SendByte(byte[] sendBuffer)
         {
-            oSocket.Send(byteToSend);
+              try
+              {
+                  if (SocketConnected())
+                  {
+                      // Begin sending the data to the remote device.  
+                      oSocket.BeginSend(sendBuffer, 0, sendBuffer.Length, 0,
+                                  new AsyncCallback(SendCallback), oSocket);
+                  }
+              }
+              catch(SocketException ex)
+              {
+                  Console.WriteLine("KinectSocket::SendByte Exception Message: " + ex.ToString());
+              }
+        }
+
+        private static void SendCallback(IAsyncResult ar)
+        {
+            try
+            {
+                // Retrieve the socket from the state object.  
+                Socket client = (Socket)ar.AsyncState;
+                // Complete sending the data to the remote device.  
+                int bytesSent = client.EndSend(ar);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("SendCallback Catch Error Msg: " + e.ToString());
+            }
         }
 
         public void UpdateSocketState()
         {
             if (bCalibrated)
-                sSocketState = oSocket.RemoteEndPoint.ToString() + " Calibrated = true";
+            {
+                IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
+                if (clientIdSok > -1)
+                    sSocketState = "Client: " + clientIdSok + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = true";
+                else
+                    sSocketState = "\tIP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = true";
+            }
             else
-                sSocketState = oSocket.RemoteEndPoint.ToString() + " Calibrated = false";
+            {
+                IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
+                if (clientIdSok > -1)
+                    sSocketState = "Client: " + clientIdSok + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+                else
+                    sSocketState = "\tIP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+            }
 
-            if (eChanged != null)
-                eChanged();
+            eChanged?.Invoke();
         }
+
+        public (List<byte> lFrameRGBOut, List<Single> lFrameVertsOut, List<Body> lBodiesOut, int timestampOut, int totalBytesOut) CheckRxBufferStatus(int syncTimestamp, int tsOffsetFromUtcTime, int rxBufferHoldPktsThreshold)
+        {
+            List <Single> lFrameVertsOut = new List<Single>();
+            List<byte> lFrameRGBOut = new List<byte>();
+            List<Body> lBodiesOut = new List<Body>();
+            int timestampOut = 0;
+            int totalBytesOut = 0;
+
+            var (_lFrameRGBOut, _lFrameVertsOut, _lBodiesOut, _timestampOut, _totalBytesOut) = oBufferRxAlgorithm.Dequeue(syncTimestamp, tsOffsetFromUtcTime, rxBufferHoldPktsThreshold);
+            lFrameVertsOut = _lFrameVertsOut;
+            lFrameRGBOut = _lFrameRGBOut;
+            lBodiesOut = _lBodiesOut;
+            timestampOut = _timestampOut;
+            totalBytesOut = _totalBytesOut;
+
+            return (lFrameRGBOut, lFrameVertsOut, lBodiesOut, timestampOut, totalBytesOut);
+        }
+
+        public void CheckIfRequestFrameIsRequired(int rxBufferHoldPktsThreshold)
+        {
+            bool reqFrame = oBufferRxAlgorithm.CheckStoredFrames(rxBufferHoldPktsThreshold);
+            if (reqFrame)
+                RequestLastFrame();
+        }        
     }
 }

@@ -12,19 +12,11 @@
 //        title={LiveScan3D: A Fast and Inexpensive 3D Data Acquisition System for Multiple Kinect v2 Sensors},
 //        year={2015},
 //    }
+using OpenTK;
+using OpenTK.Graphics.OpenGL;
+using OpenTK.Input;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Globalization;
-using System.Windows.Forms.Layout;
-
-using System.Diagnostics;
-
-using OpenTK;
-using OpenTK.Graphics;
-using OpenTK.Input;
 
 enum ECameraMode
 {
@@ -86,7 +78,7 @@ namespace KinectServer
 
         /// <summary>Creates a 800x600 window with the specified title.</summary>
         public OpenGLWindow()
-            : base(800, 600, GraphicsMode.Default, "LiveScan")
+            : base(800, 600, OpenTK.Graphics.GraphicsMode.Default, "LiveScan")
         {
             this.VSync = VSyncMode.Off;
             MouseUp += new EventHandler<MouseButtonEventArgs>(OnMouseButtonUp);
@@ -95,7 +87,7 @@ namespace KinectServer
             MouseWheel += new EventHandler<MouseWheelEventArgs>(OnMouseWheelChanged);
 
             KeyDown += new EventHandler<KeyboardKeyEventArgs>(OnKeyDown);
-            
+
             cameraPosition[0] = 0;
             cameraPosition[1] = 0;
             cameraPosition[2] = 1.0f;
@@ -187,9 +179,9 @@ namespace KinectServer
             GL.Hint(HintTarget.PointSmoothHint, HintMode.Nicest);
 
             // Setup VBO state
-            GL.EnableClientState(EnableCap.ColorArray);
-            GL.EnableClientState(EnableCap.VertexArray);
-            
+            GL.EnableClientState(ArrayCap.ColorArray);
+            GL.EnableClientState(ArrayCap.VertexArray);
+
             GL.GenBuffers(1, out VBOHandle);
 
             // Since there's only 1 VBO in the app, might aswell setup here.
@@ -234,7 +226,7 @@ namespace KinectServer
 
             //if (cameraPosition[2] < 0)
             //    cameraPosition[2] = 0;
-                    
+
         }
 
         void OnMouseMove(object sender, MouseMoveEventArgs e)
@@ -267,8 +259,8 @@ namespace KinectServer
 
                     cameraPosition[2] -= dy;
 
-                //    if (cameraPosition[2] < 0)
-                 //       cameraPosition[2] = 0;
+                    //    if (cameraPosition[2] < 0)
+                    //       cameraPosition[2] = 0;
 
                     break;
 
@@ -307,8 +299,8 @@ namespace KinectServer
                     CameraMode = ECameraMode.CAMERA_TRACK;
                     break;
             }
-            MousePrevious.X = Mouse.X;
-            MousePrevious.Y = Mouse.Y;
+            MousePrevious.X = OpenTK.Input.Mouse.GetState().X; //cuz Mouse.X is obselete, hence I have to use Mouse.GetState().X yanis May 2019
+            MousePrevious.Y = OpenTK.Input.Mouse.GetState().Y; //cuz Mouse.Y is obselete, hence I have to use Mouse.GetState().Y yanis May 2019
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -380,7 +372,7 @@ namespace KinectServer
         /// </summary>
         /// <param name="e">Contains timing information.</param>
         protected override void OnRenderFrame(FrameEventArgs e)
-        {        
+        {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             GL.PushMatrix();
@@ -396,8 +388,8 @@ namespace KinectServer
             // Fill newly allocated buffer
             GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(VertexC4ubV3f.SizeInBytes * (PointCount + 2 * LineCount)), VBO, BufferUsageHint.StreamDraw);
 
-            GL.DrawArrays(BeginMode.Points, 0, PointCount);
-            GL.DrawArrays(BeginMode.Lines, PointCount, 2 * LineCount);
+            GL.DrawArrays(PrimitiveType.Points, 0, PointCount);
+            GL.DrawArrays(PrimitiveType.Lines, PointCount, 2 * LineCount);
 
             GL.PopMatrix();
 
@@ -654,12 +646,12 @@ namespace KinectServer
                 n += AddBone(bodyIdx, JointType.JointType_HipLeft, JointType.JointType_KneeLeft, startIdx + n);
                 n += AddBone(bodyIdx, JointType.JointType_KneeLeft, JointType.JointType_AnkleLeft, startIdx + n);
                 n += AddBone(bodyIdx, JointType.JointType_AnkleLeft, JointType.JointType_FootLeft, startIdx + n);
-            }         
+            }
 
             return nLinesToAdd;
         }
 
-        private void AddLine(int startIdx, float x0, float y0, float z0, 
+        private void AddLine(int startIdx, float x0, float y0, float z0,
             float x1, float y1, float z1)
         {
             VBO[startIdx].Position.X = x0;

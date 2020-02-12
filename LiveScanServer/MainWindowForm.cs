@@ -12,29 +12,20 @@
 //        title={LiveScan3D: A Fast and Inexpensive 3D Data Acquisition System for Multiple Kinect v2 Sensors},
 //        year={2015},
 //    }
+//  The initial code has been significantly modified in order to support multiple TCP connections, decoupled functions, buffers,
+//  and other functionalities to correctly request/receive/display the frames at the server.
+//  Comments or modifications (major) are made by Ioannis Selinis (5GIC University of Surrey, 2019)
+
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
-using System.Globalization;
-using System.Runtime.Serialization;
-
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Timers;
-
-using System.Diagnostics;
- 
-using System.Xml.Serialization; 
-
 
 namespace KinectServer
 {
@@ -45,6 +36,8 @@ namespace KinectServer
 
         KinectServer oServer;
         TransferServer oTransferServer;
+        BufferTxAlgorithm oBufferAlgorithm; // this is used to store the frames produced by the live show and send them to the UEs!!!
+        BufferLiveShowAlgorithm.BufferLiveShowAlgorithm oBufferLiveShowAlgorithm; // this is used to store the frames produced for the live show
 
         //Those three variables are shared with the OpenGLWindow class and are used to exchange data with it.
         //Vertices from all of the sensors
@@ -57,8 +50,22 @@ namespace KinectServer
         List<Body> lAllBodies = new List<Body>();
 
         bool bServerRunning = false;
+        bool bDebugOption = false;
         bool bRecording = false;
         bool bSaving = false;
+
+        int reqDelayClient = 1; // the min interval when server will be requesting for the latest captured frame from the sensors
+        int showLiveDelay = Math.Max(15, 20); // the min interval when server will be displaying the hologram on live show 
+        int reqDelayUe = 10; // the min interval when server processes the requests for the UEs
+        int rxBufferHoldPkts = 1; // by default, the threshold is set to 1 (the stored pkts are less than rxBufferHoldPkts, then server requests) 
+        int tcpConnectionsNum = 1; // by default the number of TCP connections is set to 1
+        int tcpConnectionsNumUe = 1; // by default the number of TCP connections is set to 1 (for UEs)
+        int displayedFramesCtr = 0;
+        object displayedFramesLock = new object();
+
+        LoggingInformation logInformationPtr = new LoggingInformation();
+
+        public string strfilePath;
 
         //Live view open or not
         bool bLiveViewRunning = false;
@@ -69,11 +76,9 @@ namespace KinectServer
         //The live view window class
         OpenGLWindow oOpenGLWindow;
 
-        List<Frame> LocalFrames = new List<Frame>();
-
         public MainWindowForm()
         {
-            //This tries to read the settings from "settings.bin", if it failes the settings stay at default values.
+            //This tries to read the settings from "settings.bin", if it fails the settings stay at default values.
             try
             {
                 IFormatter formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
@@ -81,17 +86,31 @@ namespace KinectServer
                 oSettings = (KinectSettings)formatter.Deserialize(stream);
                 stream.Close();
             }
-            catch(Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine("Failed to read the settings.bin " + ex.ToString());
             }
 
             oServer = new KinectServer(oSettings);
             oServer.eSocketListChanged += new SocketListChangedHandler(UpdateListView);
             oTransferServer = new TransferServer();
-            oTransferServer.lVertices = lAllVertices;
-            oTransferServer.lColors = lAllColors;
+            oBufferAlgorithm = new BufferTxAlgorithm();
+            oBufferLiveShowAlgorithm = new BufferLiveShowAlgorithm.BufferLiveShowAlgorithm();
+            oTransferServer.SetBufferClass(oBufferAlgorithm);
+            oServer.SetLiveShowBuffer(oBufferLiveShowAlgorithm);
+            oServer.SetMainWindowForm(this);
 
             InitializeComponent();
+        }
+
+        public int GetDisplayedFrameCounter()
+        {
+            int _out = displayedFramesCtr;
+            lock (displayedFramesLock)
+            {                
+                displayedFramesCtr = 0;
+            }
+            return _out;            
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -111,24 +130,17 @@ namespace KinectServer
         private void btStart_Click(object sender, EventArgs e)
         {
             bServerRunning = !bServerRunning;
-
             if (bServerRunning)
             {
                 oServer.StartServer();
                 oTransferServer.StartServer();
                 btStart.Text = "Stop server";
-
-                frameCounter = 0;
-                LocalFrames = LoadFrames();
             }
             else
             {
                 oServer.StopServer();
                 oTransferServer.StopServer();
                 btStart.Text = "Start server";
-                
-                frameCounter = 0;
-                LocalFrames.Clear();
             }
         }
 
@@ -149,17 +161,22 @@ namespace KinectServer
 
             int nCaptured = 0;
             BackgroundWorker worker = (BackgroundWorker)sender;
-            while (!worker.CancellationPending)
+            while (!worker.CancellationPending) // BackgroundWorker.CancellationPending Property: Gets a value indicating whether the application has requested cancellation of a background operation ... yanis
             {
                 oServer.CaptureSynchronizedFrame();
 
                 nCaptured++;
                 SetStatusBarOnTimer("Captured frame " + (nCaptured).ToString() + ".", 5000);
             }
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " recordingWorker_DoWork with nCaptured: " + nCaptured + " updateWorker.IsBusy: " + updateWorker.IsBusy + " oOpenGLWindow " + oOpenGLWindow);
         }
 
         private void recordingWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " recordingWorker_RunWorkerCompleted recording has been terminated, begin now to save the frames");
+
             //After recording has been terminated it is time to begin saving the frames.
             //Saving is downloading the frames from clients and saving them locally.
             bSaving = true;
@@ -173,6 +190,9 @@ namespace KinectServer
         //Opens the live view window
         private void OpenGLWorker_DoWork(object sender, DoWorkEventArgs e)
         {
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " OpenGLWorker_DoWork, the live view window is open");
+
             bLiveViewRunning = true;
             oOpenGLWindow = new OpenGLWindow();
 
@@ -196,6 +216,9 @@ namespace KinectServer
 
         private void savingWorker_DoWork(object sender, DoWorkEventArgs e)
         {
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " savingWorker_DoWork, use the btRecord button (to cancel) or the loop will break once there are no more stored frames " + " updateWorker.IsBusy: " + updateWorker.IsBusy + " oOpenGLWindow " + oOpenGLWindow);
+
             int nFrames = 0;
 
             string outDir = "out" + "\\" + txtSeqName.Text + "\\";
@@ -245,6 +268,8 @@ namespace KinectServer
                     Utils.saveToPly(outputFilename, lFrameVerts, lFrameRGB, oSettings.bSaveAsBinaryPLY);
                 }
             }
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " savingWorker_DoWork, saved frames: " + nFrames);
         }
 
         private void savingWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -262,108 +287,56 @@ namespace KinectServer
             btCalibrate.Enabled = true;
         }
 
-        private int frameCounter = 0;
-
         //Continually requests frames that will be displayed in the live view window.
         private void updateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            List<List<byte>> lFramesRGB = new List<List<byte>>();
-            List<List<Single>> lFramesVerts = new List<List<Single>>();
-            List<List<Body>> lFramesBody = new List<List<Body>>();
-
             BackgroundWorker worker = (BackgroundWorker)sender;
             while (!worker.CancellationPending)
             {
-                Thread.Sleep(1);
-                oServer.GetLatestFrame(lFramesRGB, lFramesVerts, lFramesBody);
-
-                //Update the vertex and color lists that are common between this class and the OpenGLWindow.
-                lock (lAllVertices)
+                Thread.Sleep(showLiveDelay);
+                int _tsOffsetFromUtcTime = oServer.localOffsetTs;
+                var (lFramesRGB, lFramesVerts, lFramesBody, _outMinTimestamp) = oBufferLiveShowAlgorithm.Dequeue(_tsOffsetFromUtcTime);
+                if (lFramesRGB.Count > 0)
                 {
-                    lAllVertices.Clear();
-                    lAllColors.Clear();
-                    lAllBodies.Clear();
-                    lAllCameraPoses.Clear();
-
-                    for (int i = 0; i < lFramesRGB.Count; i++)
+                    //Update the vertex and color lists that are common between this class and the OpenGLWindow.
+                    lock (lAllVertices)
                     {
+                        lAllVertices.Clear();
+                        lAllColors.Clear();
+                        lAllBodies.Clear();
+                        lAllCameraPoses.Clear();
 
-                        /*
-                        if (frameCounter < 20)
+                        for (int i = 0; i < lFramesRGB.Count; i++)
                         {
-                            ExportFrame(lFramesVerts[i], lFramesRGB[i], lFramesBody[i]);
+                            lAllVertices.AddRange(lFramesVerts[i]);
+                            lAllColors.AddRange(lFramesRGB[i]);
+                            lAllBodies.AddRange(lFramesBody[i]);
                         }
-                        */
-                        lAllVertices.AddRange(lFramesVerts[i]);
-                        lAllColors.AddRange(lFramesRGB[i]);
-                        lAllBodies.AddRange(lFramesBody[i]);
-
-                        var frame = LocalFrames[frameCounter % LocalFrames.Count];
-                        
-                        frame.Vertices = Transformer.Apply3DTransform(frame.Vertices, Transformer.GetYRotationTransform(90));
-
-                        lAllColors.AddRange(frame.RGB);
-                        lAllVertices.AddRange(frame.Vertices);
-                        lAllBodies.AddRange(frame.Bodies);
-
-                        frameCounter++;
-                    }
-
-                    lAllCameraPoses.AddRange(oServer.lCameraPoses);
+                        lAllCameraPoses.AddRange(oServer.lCameraPoses);
+                        if (oTransferServer.UesCurrentlyConnected())
+                            oBufferAlgorithm.BufferedFrames(lAllVertices.ToList(), lAllColors.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime);
+                    }                       
+                    //Note the fact that a new frame was downloaded, this is used to estimate the FPS.
+                    if (oOpenGLWindow != null && lFramesRGB.Count > 0)
+                    {
+                        displayedFramesCtr++;
+                        oOpenGLWindow.CloudUpdateTick();
+                    }                        
                 }
-
-                //Notes the fact that a new frame was downloaded, this is used to estimate the FPS.
-                if (oOpenGLWindow != null)
-                    oOpenGLWindow.CloudUpdateTick();
             }
         }
 
-        private void ExportFrame(List<Single> lFramesVerts, List<byte> lFramesRGB, List<Body> lFramesBody)
-        {
-
-            var frame = new Frame(lFramesVerts, lFramesRGB, lFramesBody);
-
-            XmlSerializer serializer = new XmlSerializer(typeof(Frame));
-
-            using(StreamWriter file = new StreamWriter($"frames\\{frameCounter}.frame")){ 
-                serializer.Serialize(file, frame);
-            }
-        }
-
-        private List<Frame> LoadFrames(){
-
-            List<Frame> frames = new List<Frame>();
-
-            foreach (string fileName in Directory.EnumerateFiles("frames", "*.frame"))
-            {
-                Frame frame; 
-                XmlSerializer serializer = new XmlSerializer(typeof(Frame));
-            
-                using(StreamReader file = new StreamReader(fileName)){ 
-                    frame = (Frame)serializer.Deserialize(file);
-                }  
-
-                frames.Add(frame);
-            }
-
-            return frames;
-                      
-        }
-        
         //Performs the ICP based pose refinement.
         private void refineWorker_DoWork(object sender, DoWorkEventArgs e)
-        {                      
+        {
             if (oServer.bAllCalibrated == false)
             {
                 SetStatusBarOnTimer("Not all of the devices are calibrated.", 5000);
                 return;
-            } 
+            }
 
             //Download a frame from each client.
-            List<List<float>> lAllFrameVertices = new List<List<float>>();
-            List<List<byte>> lAllFrameColors = new List<List<byte>>();
-            List<List<Body>> lAllFrameBody = new List<List<Body>>();
-            oServer.GetLatestFrame(lAllFrameColors, lAllFrameVertices, lAllFrameBody);
+            var (lAllFrameColors, lAllFrameVertices, lAllFrameBody, _outMinTimestamp) = oBufferLiveShowAlgorithm.Dequeue(oServer.localOffsetTs);
 
             //Initialize containers for the poses.
             List<float[]> Rs = new List<float[]>();
@@ -383,8 +356,7 @@ namespace KinectServer
             }
 
             //Use ICP to refine the sensor poses.
-            //This part is explained in more detail in our article (name on top of this file).
-
+            //This part is explained in more detail in our article (name on top of this file).            
             for (int refineIter = 0; refineIter < oSettings.nNumRefineIters; refineIter++)
             {
                 for (int i = 0; i < lAllFrameVertices.Count; i++)
@@ -445,7 +417,7 @@ namespace KinectServer
                         worldTransforms[i].R[j, k] = tempR[j, k];
                         cameraPoses[i].R[j, k] = tempR[j, k];
                     }
-                }                    
+                }
             }
 
             oServer.lWorldTransforms = worldTransforms;
@@ -456,6 +428,9 @@ namespace KinectServer
 
         private void refineWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " refineWorker_RunWorkerCompleted, Re-enable all of the buttons after refinement");
+
             //Re-enable all of the buttons after refinement.
             btRefineCalib.Enabled = true;
             btCalibrate.Enabled = true;
@@ -465,9 +440,12 @@ namespace KinectServer
         //This is used for: starting/stopping the recording worker, stopping the saving worker
         private void btRecord_Click(object sender, EventArgs e)
         {
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " btRecord_Click, tarting/stopping the recording worker, stopping the saving worker. No of clients: " + oServer.nClientCount + " bSaving " + bSaving);
+
             if (oServer.nClientCount < 1)
             {
-                SetStatusBarOnTimer("At least one client needs to be connected for recording.", 5000);                
+                SetStatusBarOnTimer("At least one client needs to be connected for recording.", 5000);
                 return;
             }
 
@@ -480,6 +458,7 @@ namespace KinectServer
             }
 
             bRecording = !bRecording;
+
             if (bRecording)
             {
                 //Stop the update worker to reduce the network usage (provides better synchronization).
@@ -490,12 +469,244 @@ namespace KinectServer
                 btRefineCalib.Enabled = false;
                 btCalibrate.Enabled = false;
             }
-            else 
+            else
             {
                 btRecord.Enabled = false;
-                recordingWorker.CancelAsync();                
+                recordingWorker.CancelAsync();
             }
-            
+        }
+
+        private void btLatencyBtn_Click(object sender, EventArgs e)
+        {
+            // here we want to get the text from showLiveLatency textbox
+            if (reqLatency.Text.Length > 0 && reqLatency.Text != "Request Latency [ms]")
+            {
+                if (Regex.IsMatch(reqLatency.Text, @"^\d+$")) // return true if input is all numbers
+                {
+                    try
+                    {
+                        reqDelayClient = int.Parse(reqLatency.Text);
+                        oServer.SetReqDelayClient(reqDelayClient);
+                        if (!string.IsNullOrEmpty(strfilePath))
+                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " request interval changed and set to: " + reqDelayClient);
+                    }
+                    catch (FormatException er)
+                    {
+                        Console.WriteLine("Unable to parse the text box with error {0}.", er.Message);
+                    }
+                }
+            }
+        }
+
+        private void btshowLiveLatencyBtn_Click(object sender, EventArgs e)
+        {
+            // here we want to get the text from showLiveLatency textbox
+            if (showLiveLatency.Text.Length > 0 && showLiveLatency.Text != "ShowLive Latency [ms]")
+            {
+                if (Regex.IsMatch(showLiveLatency.Text, @"^\d+$")) // return true if input is all numbers
+                {
+                    try
+                    {
+                        showLiveDelay = Math.Max(int.Parse(showLiveLatency.Text), 5); //minimum of 5ms updating the live show
+                        if (!string.IsNullOrEmpty(strfilePath))
+                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " show live interval changed and set to: " + showLiveDelay);
+                    }
+                    catch (FormatException er)
+                    {
+                        Console.WriteLine("Unable to parse the text box with error {0}.", er.Message);
+                    }
+                }
+            }
+        }
+
+        private void btHoldRxFrames_Click(object sender, EventArgs e)
+        {
+            // here we want to get the text from holdRxFrames textbox
+            if (holdRxFrames.Text.Length > 0 && holdRxFrames.Text != "Rx Buffer Hold [pkts]")
+            {
+                if (Regex.IsMatch(holdRxFrames.Text, @"^\d+$")) // return true if input is all numbers
+                {
+                    try
+                    {
+                        rxBufferHoldPkts = int.Parse(holdRxFrames.Text);
+                        oServer.SetRxBufferHoldScheme(rxBufferHoldPkts);
+                        if (!string.IsNullOrEmpty(strfilePath))
+                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " the rx-buffer threshold (hold) changed to: " + rxBufferHoldPkts);
+                    }
+                    catch (FormatException er)
+                    {
+                        Console.WriteLine("Unable to parse the text box with error {0}.", er.Message);
+                    }
+                }
+            }
+        }
+
+        private void btTcpConnections_Click(object sender, EventArgs e)
+        {
+            // here we want to get the text from holdRxFrames textbox
+            if (tcpConnections.Text.Length > 0 && tcpConnections.Text != "TCP connections")
+            {
+                if (Regex.IsMatch(tcpConnections.Text, @"^\d+$")) // return true if input is all numbers
+                {
+                    try
+                    {
+                        tcpConnectionsNum = int.Parse(tcpConnections.Text);
+                        oServer.SetTcpConnections(tcpConnectionsNum);
+
+                        if (!string.IsNullOrEmpty(strfilePath))
+                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections is set to: " + tcpConnectionsNum);
+                    }
+                    catch (FormatException er)
+                    {
+                        Console.WriteLine("Unable to parse the text box (TCP) with error {0}.", er.Message);
+                    }
+                }
+            }
+        }
+
+        private void btTcpConnectionsUe_Click(object sender, EventArgs e)
+        {
+            // here we want to get the text from holdRxFrames textbox
+            if (tcpConnectionsUe.Text.Length > 0 && tcpConnectionsUe.Text != "TCP connections UE")
+            {
+                if (Regex.IsMatch(tcpConnectionsUe.Text, @"^\d+$")) // return true if input is all numbers
+                {
+                    try
+                    {
+                        tcpConnectionsNumUe = int.Parse(tcpConnectionsUe.Text);
+                        oTransferServer.SetUeTcpConnections(tcpConnectionsNumUe);
+
+                        if (!string.IsNullOrEmpty(strfilePath))
+                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections (UE) is set to: " + tcpConnectionsNumUe);
+                    }
+                    catch (FormatException er)
+                    {
+                        Console.WriteLine("Unable to parse the text box (TCP - UE) with error {0}.", er.Message);
+                    }
+                }
+            }
+        }
+
+        private void showLiveLatency_leave(object sender, EventArgs e)
+        {
+            if (showLiveLatency.Text.Length == 0)
+            {
+                showLiveLatency.Text = "ShowLive Latency [ms]";
+                showLiveLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            }
+        }
+
+        private void showLiveLatency_enter(object sender, EventArgs e)
+        {
+            if (showLiveLatency.Text == "ShowLive Latency [ms]")
+            {
+                showLiveLatency.Text = "";
+                showLiveLatency.ForeColor = System.Drawing.SystemColors.WindowText;
+            }
+        }
+
+        private void reqLatency_leave(object sender, EventArgs e)
+        {
+            if (reqLatency.Text.Length == 0)
+            {
+                reqLatency.Text = "Request Latency [ms]";
+                reqLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            }
+        }
+
+        private void reqLatency_enter(object sender, EventArgs e)
+        {
+            if (reqLatency.Text == "Request Latency [ms]")
+            {
+                reqLatency.Text = "";
+                reqLatency.ForeColor = System.Drawing.SystemColors.WindowText;
+            }
+        }
+
+        private void holdRxFrames_leave(object sender, EventArgs e)
+        {
+            if (holdRxFrames.Text.Length == 0)
+            {
+                holdRxFrames.Text = "Rx Buffer Hold [pkts]";
+                holdRxFrames.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            }
+        }
+
+        private void holdRxFrames_enter(object sender, EventArgs e)
+        {
+            if (holdRxFrames.Text == "Rx Buffer Hold [pkts]")
+            {
+                holdRxFrames.Text = "";
+                holdRxFrames.ForeColor = System.Drawing.SystemColors.WindowText;
+            }
+        }
+
+        private void tcpConnections_leave(object sender, EventArgs e)
+        {
+            if (tcpConnections.Text.Length == 0)
+            {
+                tcpConnections.Text = "TCP connections";
+                tcpConnections.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            }
+        }
+
+        private void tcpConnectionsUe_leave(object sender, EventArgs e)
+        {
+            if (tcpConnectionsUe.Text.Length == 0)
+            {
+                tcpConnectionsUe.Text = "TCP connections UE";
+                tcpConnectionsUe.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            }
+        }
+
+        private void tcpConnections_enter(object sender, EventArgs e)
+        {
+            if (tcpConnections.Text == "TCP connections")
+            {
+                tcpConnections.Text = "";
+                tcpConnections.ForeColor = System.Drawing.SystemColors.WindowText;
+            }
+        }
+
+        private void tcpConnectionsUe_enter(object sender, EventArgs e)
+        {
+            if (tcpConnectionsUe.Text == "TCP connections UE")
+            {
+                tcpConnectionsUe.Text = "";
+                tcpConnectionsUe.ForeColor = System.Drawing.SystemColors.WindowText;
+            }
+        }
+
+        private void btDebug_Click(object sender, EventArgs e)
+        {
+            bDebugOption = !bDebugOption;
+            if (bDebugOption)
+            {
+                oServer.DebugFlagOn();
+                btDebug.Text = "Stop Log";
+
+                string sysTime = DateTime.Now.ToString("hhmmss");
+                string sysData = DateTime.Now.ToString("ddMMyy");
+                try
+                {
+                    logInformationPtr.CreateDirectory();
+                    string directory = logInformationPtr.GetDirectory();
+                    if (directory == null)
+                        throw new ArgumentNullException("directory");
+                    strfilePath = directory + @"\OutputFileServerMWF_" + sysData + "_" + sysTime + ".txt";
+                    logInformationPtr.SetFilePath(strfilePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("MainWindowForm directory not found " + ex.Message);
+                }
+            }
+            else
+            {
+                oServer.DebugFlagOff();
+                btDebug.Text = "Start Log";
+                strfilePath = string.Empty;
+            }
         }
 
         private void btCalibrate_Click(object sender, EventArgs e)
@@ -505,6 +716,9 @@ namespace KinectServer
 
         private void btRefineCalib_Click(object sender, EventArgs e)
         {
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " btRefineCalib_Click pressed, clients: " + oServer.nClientCount + " updateWorker.IsBusy: " + updateWorker.IsBusy + " oOpenGLWindow " + oOpenGLWindow);
+
             if (oServer.nClientCount < 2)
             {
                 SetStatusBarOnTimer("To refine calibration you need at least 2 connected devices.", 5000);
@@ -525,7 +739,7 @@ namespace KinectServer
         }
 
         private void btShowLive_Click(object sender, EventArgs e)
-        {            
+        {
             RestartUpdateWorker();
 
             //Opens the live view window if it is not open yet.
@@ -541,7 +755,7 @@ namespace KinectServer
             oStatusBarTimer = new System.Timers.Timer();
 
             oStatusBarTimer.Interval = milliseconds;
-            oStatusBarTimer.Elapsed += delegate(object sender, System.Timers.ElapsedEventArgs e)
+            oStatusBarTimer.Elapsed += delegate (object sender, System.Timers.ElapsedEventArgs e)
             {
                 oStatusBarTimer.Stop();
                 statusLabel.Text = "";
@@ -549,15 +763,34 @@ namespace KinectServer
             oStatusBarTimer.Start();
         }
 
-        //Updates the ListBox contaning the connected clients, called by events inside KinectServer.
+        //Updates the ListBox containing the connected clients, called by events inside KinectServer.
         private void UpdateListView(List<KinectSocket> socketList)
         {
-            List<string> listBoxItems = new List<string>();
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " UpdateListView");
 
+            List<string> listBoxItems = new List<string>();
             for (int i = 0; i < socketList.Count; i++)
+            {
                 listBoxItems.Add(socketList[i].sSocketState);
+            }
 
             lClientListBox.DataSource = listBoxItems;
+        }
+
+        private void MainWindowForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void LbSeqName_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tcpConnections_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

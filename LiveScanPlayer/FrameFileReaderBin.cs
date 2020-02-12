@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
+using System.Text;
 
 namespace LiveScanPlayer
 {
@@ -54,7 +52,7 @@ namespace LiveScanPlayer
             int bytesPerVertexPoint = 3 * sizeof(short);
             int bytesPerColorPoint = 4 * sizeof(byte);
             int bytesPerPoint = bytesPerVertexPoint + bytesPerColorPoint;
-            
+
             byte[] frameData = binaryReader.ReadBytes(bytesPerPoint * nPoints);
 
             if (frameData.Length < bytesPerPoint * nPoints)
@@ -75,7 +73,7 @@ namespace LiveScanPlayer
                 {
                     vertices.Add(tempVertices[3 * i + j] / 1000.0f);
                     colors.Add(tempColors[4 * i + j]);
-                }                    
+                }
             }
 
             binaryReader.ReadByte();

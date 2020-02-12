@@ -14,11 +14,9 @@
 //    }
 #include "filter.h"
 
-using namespace std;
-
-vector<KNNeighborsResult> KNNeighbors(PointCloud &cloud, kdTree &tree, int k)
+std::vector<KNNeighborsResult> KNNeighbors(PointCloud &cloud, kdTree &tree, int k)
 {
-	vector<KNNeighborsResult> result(cloud.pts.size());
+	std::vector<KNNeighborsResult> result(cloud.pts.size());
 	int nCloudPts = static_cast<int>(cloud.pts.size());
 
 #pragma omp parallel for
@@ -44,9 +42,9 @@ void filter(std::vector<Point3f> &vertices, std::vector<RGB> &colors, int k, flo
 	kdTree tree(3, cloud);
 	tree.buildIndex();
 
-	vector<KNNeighborsResult> knn = KNNeighbors(cloud, tree, k);
+	std::vector<KNNeighborsResult> knn = KNNeighbors(cloud, tree, k);
 	
-	vector<int> indicesToRemove;
+	std::vector<int> indicesToRemove;
 
 	float distThreshold = pow(maxDist, 2);
 	for (unsigned int i = 0; i < cloud.pts.size(); i++)

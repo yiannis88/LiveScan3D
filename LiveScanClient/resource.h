@@ -9,6 +9,11 @@
 #define IDC_IP                          1006
 #define IDC_BUTTON_SWITCH               1013
 #define IDC_STATUS2                     1014
+#define IDC_BUTTON_PROFILING			1015
+#define IDC_STATIC_TCPCONNECTIONS	    1016
+#define IDC_TCPCONNECTIONS				1017
+#define IDC_TITLE_FRAMEDROP				1018
+#define IDC_FIELD_FRAMEDROP				1019
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
