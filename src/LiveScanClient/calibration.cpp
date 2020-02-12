@@ -171,11 +171,11 @@ void Calibration::SaveCalibration()
 
 void Calibration::Procrustes(MarkerInfo &marker, vector<Point3f> &markerInWorld, vector<float> &worldToMarkerT, vector<vector<float>> &worldToMarkerR)
 {
-	int nVertices = marker.points.size();
+	unsigned int nVertices = (unsigned int) marker.points.size();
 
 	Point3f markerCenterInWorld;
 	Point3f markerCenter;
-	for (int i = 0; i < nVertices; i++)
+	for (unsigned int i = 0; i < nVertices; i++)
 	{
 		markerCenterInWorld.X += markerInWorld[i].X / nVertices;
 		markerCenterInWorld.Y += markerInWorld[i].Y / nVertices;
@@ -193,7 +193,7 @@ void Calibration::Procrustes(MarkerInfo &marker, vector<Point3f> &markerInWorld,
 
 	vector<Point3f> markerInWorldTranslated(nVertices);
 	vector<Point3f> markerTranslated(nVertices);
-	for (int i = 0; i < nVertices; i++)
+	for (unsigned int i = 0; i < nVertices; i++)
 	{
 		markerInWorldTranslated[i].X = markerInWorld[i].X + worldToMarkerT[0];
 		markerInWorldTranslated[i].Y = markerInWorld[i].Y + worldToMarkerT[1];
@@ -207,7 +207,7 @@ void Calibration::Procrustes(MarkerInfo &marker, vector<Point3f> &markerInWorld,
 	cv::Mat A(nVertices, 3, CV_64F);
 	cv::Mat B(nVertices, 3, CV_64F);
 
-	for (int i = 0; i < nVertices; i++)
+	for (unsigned int i = 0; i < nVertices; i++)
 	{
 		A.at<double>(i, 0) = markerTranslated[i].X;
 		A.at<double>(i, 1) = markerTranslated[i].Y;

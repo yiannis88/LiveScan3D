@@ -34,8 +34,10 @@
 #include <algorithm>
 #include <cstdlib>
 #include <vector>
+#include <chrono>
 
 #include "general.h"
+#include <random>
 
 namespace cvflann
 {
@@ -107,7 +109,10 @@ public:
         for (int i = 0; i < size_; ++i) vals_[i] = i;
 
         // shuffle the elements in the array
-        std::random_shuffle(vals_.begin(), vals_.end());
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::default_random_engine e(seed);
+		//auto seed = std::default_random_engine{}; if uncomment this line, then comment the above two and shuffle(vals_.begin(), vals_.end(), seed);
+        std::shuffle(vals_.begin(), vals_.end(), e);
 
         counter_ = 0;
     }

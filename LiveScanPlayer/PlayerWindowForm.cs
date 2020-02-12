@@ -1,15 +1,10 @@
-﻿using System;
+﻿using KinectServer;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Threading;
 using System.IO;
-using KinectServer;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace LiveScanPlayer
 {
@@ -28,10 +23,6 @@ namespace LiveScanPlayer
         public PlayerWindowForm()
         {
             InitializeComponent();
-           
-            oTransferServer.lVertices = lAllVertices;
-            oTransferServer.lColors = lAllColors;
-
             lFrameFilesListView.Columns.Add("Current frame", 75);
             lFrameFilesListView.Columns.Add("Filename", 300);
         }
@@ -51,10 +42,10 @@ namespace LiveScanPlayer
             lock (lFrameFiles)
             {
                 for (int i = 0; i < dialog.FileNames.Length; i++)
-                {                
+                {
                     lFrameFiles.Add(new FrameFileReaderBin(dialog.FileNames[i]));
 
-                    var item = new ListViewItem(new [] { "0", dialog.FileNames[i]});
+                    var item = new ListViewItem(new[] { "0", dialog.FileNames[i] });
                     lFrameFilesListView.Items.Add(item);
                 }
             }
@@ -71,11 +62,11 @@ namespace LiveScanPlayer
 
             lock (lFrameFiles)
             {
-                    lFrameFiles.Add(new FrameFileReaderPly(dialog.FileNames));
-                    
-                    
-                    var item = new ListViewItem(new[] { "0", Path.GetDirectoryName(dialog.FileNames[0]) });
-                    lFrameFilesListView.Items.Add(item);              
+                lFrameFiles.Add(new FrameFileReaderPly(dialog.FileNames));
+
+
+                var item = new ListViewItem(new[] { "0", Path.GetDirectoryName(dialog.FileNames[0]) });
+                lFrameFilesListView.Items.Add(item);
             }
         }
 
@@ -84,7 +75,7 @@ namespace LiveScanPlayer
             bPlayerRunning = !bPlayerRunning;
 
             if (bPlayerRunning)
-            {            
+            {
                 oTransferServer.StartServer();
                 updateWorker.RunWorkerAsync();
                 btStart.Text = "Stop player";
@@ -115,7 +106,7 @@ namespace LiveScanPlayer
             lock (lFrameFiles)
             {
                 for (int i = 0; i < lFrameFiles.Count; i++)
-                {                    
+                {
                     lFrameFiles[i].Rewind();
                     lFrameFilesListView.Items[i].Text = "0";
                 }
@@ -149,7 +140,7 @@ namespace LiveScanPlayer
                         List<byte> colors = new List<byte>();
                         lFrameFiles[i].ReadFrame(vertices, colors);
 
-                        tempAllVertices.AddRange(vertices);                        
+                        tempAllVertices.AddRange(vertices);
                         tempAllColors.AddRange(colors);
                     }
                 }
@@ -167,7 +158,7 @@ namespace LiveScanPlayer
 
                 if (chSaveFrames.Checked)
                     SaveCurrentFrameToFile(outDir, curFrameIdx);
-                
+
 
                 curFrameIdx++;
             }
