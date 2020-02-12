@@ -49,6 +49,8 @@ namespace KinectServer
         //Body data from all of the sensors
         List<Body> lAllBodies = new List<Body>();
 
+        List<Frame> lClientFrames = new List<Frame>();
+
         bool bServerRunning = false;
         bool bDebugOption = false;
         bool bRecording = false;
@@ -287,6 +289,7 @@ namespace KinectServer
             btCalibrate.Enabled = true;
         }
 
+        private int frameCounter = 0;
         //Continually requests frames that will be displayed in the live view window.
         private void updateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -298,27 +301,30 @@ namespace KinectServer
                 var (lFramesRGB, lFramesVerts, lFramesBody, _outMinTimestamp) = oBufferLiveShowAlgorithm.Dequeue(_tsOffsetFromUtcTime);
                 if (lFramesRGB.Count > 0)
                 {
-                    //Update the vertex and color lists that are common between this class and the OpenGLWindow.
-                    lock (lAllVertices)
+                    var liveFrame = new Frame(new List<Single>(), new List<byte>(), new List<Body>(), 0);
+                    for (int i = 0; i < lFramesRGB.Count; i++)
                     {
-                        lAllVertices.Clear();
-                        lAllColors.Clear();
-                        lAllBodies.Clear();
-                        lAllCameraPoses.Clear();
-
-                        for (int i = 0; i < lFramesRGB.Count; i++)
-                        {
-                            lAllVertices.AddRange(lFramesVerts[i]);
-                            lAllColors.AddRange(lFramesRGB[i]);
-                            lAllBodies.AddRange(lFramesBody[i]);
-                        }
-                        lAllCameraPoses.AddRange(oServer.lCameraPoses);
-                        if (oTransferServer.UesCurrentlyConnected())
-                            oBufferAlgorithm.BufferedFrames(lAllVertices.ToList(), lAllColors.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime);
-                    }                       
+                        liveFrame.Vertices.AddRange(lFramesVerts[i]);
+                        liveFrame.RGB.AddRange(lFramesRGB[i]);
+                        liveFrame.Bodies.AddRange(lFramesBody[i]);
+                    }
+                    lAllCameraPoses.AddRange(oServer.lCameraPoses);
+                    
+                    //TODO add local frames to UE
+                    if (oTransferServer.UesCurrentlyConnected())
+                            oBufferAlgorithm.BufferedFrames(liveFrame.Vertices.ToList(), liveFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime);
+                            
+                    if (LocalFrames.Count > 0)
+                    {
+                        var localFrame = LocalFrames[frameCounter % LocalFrames.Count];
+                        if (oOpenGLWindow != null) oOpenGLWindow.AddClientFrame(localFrame);
+                        frameCounter++;
+                    }
+                                           
                     //Note the fact that a new frame was downloaded, this is used to estimate the FPS.
                     if (oOpenGLWindow != null && lFramesRGB.Count > 0)
                     {
+                        oOpenGLWindow.AddClientFrame(liveFrame);
                         displayedFramesCtr++;
                         oOpenGLWindow.CloudUpdateTick();
                     }                        
@@ -326,6 +332,38 @@ namespace KinectServer
             }
         }
 
+        private void ExportFrame(List<Single> lFramesVerts, List<byte> lFramesRGB, List<Body> lFramesBody)//, List<AffineTransform> lCameraPoses)
+        {
+
+            var frame = new Frame(lFramesVerts, lFramesRGB, lFramesBody, 1);//, lCameraPoses);
+
+            XmlSerializer serializer = new XmlSerializer(typeof(Frame));
+
+            using(TextWriter file = new StreamWriter($"frames\\{frameCounter}.xml")){ 
+                serializer.Serialize(file, frame);
+            }
+        }
+
+        private List<Frame> LoadFrames(){
+
+            List<Frame> frames = new List<Frame>();
+
+            foreach (string fileName in Directory.EnumerateFiles("frames", "*.xml"))
+            {
+                Frame frame; 
+                XmlSerializer serializer = new XmlSerializer(typeof(Frame));
+            
+                using(StreamReader file = new StreamReader(fileName)){ 
+                    frame = (Frame)serializer.Deserialize(file);
+                }  
+
+                frames.Add(frame);
+            }
+
+            return frames;
+                      
+        }
+        
         //Performs the ICP based pose refinement.
         private void refineWorker_DoWork(object sender, DoWorkEventArgs e)
         {

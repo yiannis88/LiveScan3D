@@ -19,6 +19,25 @@ using System.IO;
 
 namespace KinectServer
 {
+
+    //Basic structure to hold vertices, rgb info and bodies
+    public struct Frame
+    {
+        public List<Single> Vertices;
+        public List<byte> RGB;
+        public List<Body> Bodies;
+        public int ClientID;
+        //public List<AffineTransform> CameraPoses;
+
+        public Frame(List<Single> vertsin, List<byte> rgbin, List<Body> bodiesin, int clientID)//, List<AffineTransform> cameraPosesin)
+        {
+            Vertices = vertsin;
+            RGB = rgbin;
+            Bodies = bodiesin;
+            ClientID = clientID;
+            //CameraPoses = cameraPosesin;
+        }
+    }
     public struct Point2f
     {
         public float X;
@@ -53,6 +72,201 @@ namespace KinectServer
             }
         }
     }
+
+    //For performing AffineTransforms on point3fs
+    public class Transformer
+    {
+        public static List<Point3f> Apply3DTransform(List<Point3f> points, AffineTransform transform)
+        {
+            List<Point3f> newPoints = new List<Point3f>();
+
+            foreach (Point3f point in points)
+            {
+                newPoints.Add(Apply3DTransform(point, transform));
+            }
+
+            return newPoints;
+        }
+
+        public static Point3f Apply3DTransform(Point3f point, AffineTransform transform)
+        {
+            Point3f newPoint = new Point3f();
+
+            //matrix multiplication
+            newPoint.X = (transform.R[0, 0] * point.X) + (transform.R[0, 1] * point.Y) + (transform.R[0, 2] * point.Z) + transform.t[0];
+            newPoint.Y = (transform.R[1, 0] * point.X) + (transform.R[1, 1] * point.Y) + (transform.R[1, 2] * point.Z) + transform.t[1];
+            newPoint.Z = (transform.R[2, 0] * point.X) + (transform.R[2, 1] * point.Y) + (transform.R[2, 2] * point.Z) + transform.t[2];
+            return newPoint;
+        }
+
+        // directly apply transformation to vertices
+        public static List<Single> Apply3DTransform(List<Single> vertices, AffineTransform transform)
+        {
+            if (vertices.Count % 3 != 0)
+            {
+                throw new System.ArgumentOutOfRangeException("list of vertices must divide by 3");
+            }
+
+            var pointCount = vertices.Count / 3;
+            var newVertices = new List<Single>();
+
+            for (int i = 0; i < pointCount; i++)
+            {
+                //matrix multiplication
+                newVertices.Add((transform.R[0, 0] * vertices[i * 3]) + (transform.R[0, 1] * vertices[i * 3 + 1]) + (transform.R[0, 2] * vertices[i * 3 + 2]) + transform.t[0]);
+                newVertices.Add((transform.R[1, 0] * vertices[i * 3]) + (transform.R[1, 1] * vertices[i * 3 + 1]) + (transform.R[1, 2] * vertices[i * 3 + 2]) + transform.t[1]);
+                newVertices.Add((transform.R[2, 0] * vertices[i * 3]) + (transform.R[2, 1] * vertices[i * 3 + 1]) + (transform.R[2, 2] * vertices[i * 3 + 2]) + transform.t[2]);
+            }
+
+            return newVertices;
+        }
+
+        //parse list of vertices received by client into list of point3f to allow transformations
+        public static List<Point3f> VerticesToPoint3f(List<Single> vertices)
+        {
+            if (vertices.Count % 3 != 0)
+            {
+                throw new System.ArgumentOutOfRangeException("list of vertices must divide by 3");
+            }
+
+            List<Point3f> points = new List<Point3f>();
+
+            for (int i = 0; i < vertices.Count / 3; i++)
+            {
+                var point = new Point3f();
+
+                point.X = vertices[i * 3];
+                point.Y = vertices[i * 3 + 1];
+                point.Z = vertices[i * 3 + 2];
+
+                points.Add(point);
+            }
+
+            return points;
+        }
+
+        //parse list of points back into vertices for display
+        public static List<Single> Point3fToVertices(List<Point3f> points)
+        {
+            List<Single> verts = new List<Single>();
+
+            foreach (Point3f point in points)
+            {
+                verts.Add(point.X);
+                verts.Add(point.Y);
+                verts.Add(point.Z);
+            }
+
+            return verts;
+        }
+
+        public static AffineTransform GetXRotationTransform(float degrees)
+        {
+            float rad = degrees * (float)Math.PI / 180.0f;
+            var transform = new AffineTransform();
+            transform.R = new float[,]{
+                {1, 0, 0},
+                {0, (float)Math.Cos(rad), -((float)Math.Sin(rad))},
+                {0, (float)Math.Sin(rad), (float)Math.Cos(rad)}};
+            return transform;
+        }
+
+        public static AffineTransform GetYRotationTransform(float degrees)
+        {
+            float rad = degrees * (float)Math.PI / 180.0f;
+            var transform = new AffineTransform();
+            transform.R = new float[,]{
+                {(float)Math.Cos(rad), 0, (float)Math.Sin(rad)},
+                {0, 1, 0},
+                {-((float)Math.Sin(rad)), 0, (float)Math.Cos(rad)}};
+            return transform;
+        }
+
+        public static AffineTransform GetZRotationTransform(float degrees)
+        {
+            float rad = degrees * (float)Math.PI / 180.0f;
+            var transform = new AffineTransform();
+            transform.R = new float[,]{
+                {(float)Math.Cos(rad), -((float)Math.Sin(rad)), 0},
+                {(float)Math.Sin(rad), (float)Math.Cos(rad), 0},
+                {0, 0, 1}};
+            return transform;
+        }
+
+        public static Point3f FindMean(List<Single> verts)
+        {
+            if (verts.Count % 3 != 0)
+            {
+                throw new System.ArgumentOutOfRangeException("list of vertices must divide by 3");
+            }
+
+            Point3f mean = new Point3f
+            {
+                X = 0,
+                Y = 0,
+                Z = 0
+            };
+
+            for (int i = 0; i < verts.Count / 3; i++)
+            {
+                mean.X += verts[i * 3];
+                mean.Y += verts[i * 3 + 1];
+                mean.Z += verts[i * 3 + 2];
+            }
+
+            mean.X /= verts.Count;
+            mean.Y /= verts.Count;
+            mean.Z /= verts.Count;
+
+            return mean;
+        }
+
+        public static AffineTransform CompoundTransform(AffineTransform tran1, AffineTransform tran2)
+        {
+            AffineTransform compound = new AffineTransform
+            {
+                R = new float[,] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } }
+            };
+
+            //ROWS
+            for (int i = 0; i < 3; i++)
+            {
+                //COLUMNS
+                for (int j = 0; j < 3; j++)
+                {
+                    //3 terms
+                    for (int k = 0; k < 3; k++)
+                    {
+                        compound.R[i, j] += tran1.R[i, k] * tran2.R[k, j];
+                    }
+                }
+            }
+
+            compound.t = new float[] { tran1.t[0] + tran2.t[0], tran1.t[1] + tran2.t[1], tran1.t[2] + tran2.t[2] };
+
+            return compound;
+        }
+
+        public static List<Single> NormaliseAroundMean(List<Single> verts)
+        {
+            if (verts.Count % 3 != 0)
+            {
+                throw new System.ArgumentOutOfRangeException("list of vertices must divide by 3");
+            }
+
+            Point3f mean = FindMean(verts);
+
+            for (int i = 0; i < verts.Count / 3; i++)
+            {
+                verts[i * 3] -= mean.X;
+                verts[i * 3 + 1] -= mean.Y;
+                verts[i * 3 + 2] -= mean.Z;
+            }
+
+            return verts;
+        }
+    }
+
 
     [Serializable]
     public class MarkerPose

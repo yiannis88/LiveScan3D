@@ -54,6 +54,10 @@ namespace KinectServer
         float[] cameraPosition = new float[3];
         float[] targetPosition = new float[3];
 
+        public Dictionary<int, Frame> clientFrames = new Dictionary<int, Frame>();
+        public int SelectedFigure = -1;
+        public DisplayFrameTransformer transformer = new DisplayFrameTransformer();
+
         public List<float> vertices = new List<float>();
         public List<byte> colors = new List<byte>();
         public List<AffineTransform> cameraPoses = new List<AffineTransform>();
@@ -94,6 +98,8 @@ namespace KinectServer
             targetPosition[0] = 0;
             targetPosition[1] = 0;
             targetPosition[2] = 0;
+
+            transformer.ClientFrames = clientFrames;
         }
 
         public void CloudUpdateTick()
@@ -154,6 +160,71 @@ namespace KinectServer
                 brightnessModifier = (byte)Math.Max(0, brightnessModifier - 10);
             if (keyboard[Key.P])
                 brightnessModifier = (byte)Math.Min(255, brightnessModifier + 10);
+
+            if (keyboard[Key.I])
+                SelectNextFigure();
+            if (keyboard[Key.Y])
+                SelectPrevFigure();
+
+            int movementScale = 1;
+            if (keyboard[Key.U])
+                AddTranslation(0, 0, movementScale);
+            if (keyboard[Key.H])
+                AddTranslation(movementScale, 0, 0);
+            if (keyboard[Key.J])
+                AddTranslation(0, 0, -movementScale);
+            if (keyboard[Key.K])
+                AddTranslation(-movementScale, 0, 0);
+
+            if (keyboard[Key.R])
+                if (keyboard[Key.ShiftLeft])
+                    transformer.ResetAllClients();
+                else
+                    ResetFigure();
+
+            if (keyboard[Key.B])
+                AddRotation(0, 10, 0);
+            if (keyboard[Key.N])
+                AddRotation(0, -10, 0);
+        }
+
+        protected void SelectNextFigure()
+        {
+            if (clientFrames.Count > 0)
+            {
+                if (SelectedFigure == -1)
+                {
+                    SelectedFigure = clientFrames.Keys.ToList()[0];
+                }
+                else
+                {
+                    if (clientFrames.Count > 1)
+                    {
+                        var ClientIDs = clientFrames.Keys.ToList();
+                        var keyIndex = ClientIDs.FindIndex(x => x == SelectedFigure);
+                        SelectedFigure = ClientIDs[(keyIndex + 1) % ClientIDs.Count];
+                    }
+                }
+            }
+        }
+        protected void SelectPrevFigure()
+        {
+        }
+
+        protected void AddRotation(float x, float y, float z)
+        {
+            if (SelectedFigure != -1)
+                transformer.RotateClient(SelectedFigure, x, y, z);
+        }
+        protected void AddTranslation(float x, float y, float z)
+        {
+            if (SelectedFigure != -1)
+                transformer.TranslateClient(SelectedFigure, x, y, z);
+        }
+        protected void ResetFigure()
+        {
+            if (SelectedFigure != -1)
+                transformer.ResetClient(SelectedFigure);
         }
 
         /// <summary>Load resources here.</summary>
@@ -303,6 +374,57 @@ namespace KinectServer
             MousePrevious.Y = OpenTK.Input.Mouse.GetState().Y; //cuz Mouse.Y is obselete, hence I have to use Mouse.GetState().Y yanis May 2019
         }
 
+        public void AddClientFrame(Frame frame)
+        {
+            lock (clientFrames)
+            {
+                clientFrames[frame.ClientID] = frame;
+            }
+        }
+
+        private int FramePointCount
+        {
+            get
+            {
+                lock (clientFrames)
+                {
+                    int count = 0;
+                    foreach (Frame frame in clientFrames.Values)
+                    {
+                        count += frame.Vertices.Count / 3;
+                    }
+                    return count;
+                }
+            }
+        }
+
+        private int FrameBodyCount
+        {
+            get
+            {
+                lock (clientFrames)
+                {
+                    int count = 0;
+                    foreach (Frame frame in clientFrames.Values)
+                    {
+                        count += frame.Bodies.Count;
+                    }
+                    return count;
+                }
+            }
+        }
+
+        private int ClientCount
+        {
+            get
+            {
+                lock (clientFrames)
+                {
+                    return clientFrames.Count;
+                }
+            }
+        }
+
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             if ((DateTime.Now - tFPSUpdateTimer).Seconds >= 1)
@@ -315,37 +437,53 @@ namespace KinectServer
             }
 
 
-            lock (vertices)
+            lock (clientFrames)
             {
                 lock (settings)
-                {
+                {                    
                     bool bShowSkeletons = settings.bShowSkeletons;
 
-                    PointCount = vertices.Count / 3;
+                    var clientCount = ClientCount;
+                    PointCount = FramePointCount;
                     LineCount = 0;
                     if (bDrawMarkings)
                     {
                         //bounding box
-                        LineCount += 12;
+                        LineCount += 12 * clientCount;
                         //markers
                         LineCount += settings.lMarkerPoses.Count * 3;
                         //cameras
                         LineCount += cameraPoses.Count * 3;
                         if (bShowSkeletons)
-                            LineCount += 24 * bodies.Count;
+                            LineCount += 24 * FrameBodyCount;
                     }
 
                     VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
 
-                    for (int i = 0; i < PointCount; i++)
+                    int lastFrameCount = 0;
+                    foreach (int clientNumber in clientFrames.Keys)
                     {
-                        VBO[i].R = (byte)Math.Max(0, Math.Min(255, (colors[i * 3] + brightnessModifier)));
-                        VBO[i].G = (byte)Math.Max(0, Math.Min(255, (colors[i * 3 + 1] + brightnessModifier)));
-                        VBO[i].B = (byte)Math.Max(0, Math.Min(255, (colors[i * 3 + 2] + brightnessModifier)));
-                        VBO[i].A = 255;
-                        VBO[i].Position.X = vertices[i * 3];
-                        VBO[i].Position.Y = vertices[i * 3 + 1];
-                        VBO[i].Position.Z = vertices[i * 3 + 2];
+                        var clientFrame = clientFrames[clientNumber];
+                        /* normalising and 
+                        clientFrame.Vertices = Transformer.NormaliseAroundMean(clientFrame.Vertices);
+                        var translation = new AffineTransform();
+                        translation.t = new float[] { 2, 0, 0 };
+                        clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, translation);
+                        */
+                        clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(clientFrame.ClientID));
+
+                        for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)
+                        {
+                            var j = i + lastFrameCount;
+                            VBO[j].R = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3] + brightnessModifier)));
+                            VBO[j].G = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 1] + brightnessModifier)));
+                            VBO[j].B = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 2] + brightnessModifier)));
+                            VBO[j].A = 255;
+                            VBO[j].Position.X = clientFrame.Vertices[i * 3];
+                            VBO[j].Position.Y = clientFrame.Vertices[i * 3 + 1];
+                            VBO[j].Position.Z = clientFrame.Vertices[i * 3 + 2];
+                        }
+                        lastFrameCount += clientFrame.Vertices.Count / 3;
                     }
 
                     if (bDrawMarkings)
@@ -363,6 +501,7 @@ namespace KinectServer
                         if (bShowSkeletons)
                             iCurLineCount += AddBodies(PointCount + 2 * iCurLineCount);
                     }
+                    
                 }
             }
         }

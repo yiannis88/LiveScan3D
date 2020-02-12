@@ -79,6 +79,7 @@
     <Compile Include="KinectServerBufferTxObject.cs" />
     <Compile Include="KinectServerSocketInfoObject.cs" />
     <Compile Include="LoggingInformation.cs" />
+    <Compile Include="DisplayFrameTransformer.cs" />
     <Compile Include="MainWindowForm.cs">
       <SubType>Form</SubType>
     </Compile>
