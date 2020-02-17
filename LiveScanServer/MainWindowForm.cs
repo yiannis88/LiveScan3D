@@ -26,6 +26,7 @@ using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 
 namespace KinectServer
 {
@@ -77,6 +78,8 @@ namespace KinectServer
         KinectSettings oSettings = new KinectSettings();
         //The live view window class
         OpenGLWindow oOpenGLWindow;
+
+        List<Frame> LocalFrames = new List<Frame>();
 
         public MainWindowForm()
         {
@@ -137,6 +140,9 @@ namespace KinectServer
                 oServer.StartServer();
                 oTransferServer.StartServer();
                 btStart.Text = "Stop server";
+
+                frameCounter = 0;
+                LocalFrames = LoadFrames();
             }
             else
             {

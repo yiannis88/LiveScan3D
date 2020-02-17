@@ -160,7 +160,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(KINECTSDK20_DIR)\lib\x64;$(SolutionDir)lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>opencv_world320d.lib;kinect20.lib;libzstd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -203,6 +203,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>opencv_world320.lib;kinect20.lib;libzstd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(KINECTSDK20_DIR)\lib\x64;$(SolutionDir)lib</AdditionalLibraryDirectories>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

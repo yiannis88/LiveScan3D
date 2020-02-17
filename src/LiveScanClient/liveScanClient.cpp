@@ -24,7 +24,8 @@
 #include <strsafe.h>
 #include <fstream>
 #include "zstd.h"
-#include <date/date.h>
+#include <date.h>
+// header file has been directly injected into codebase due to issues with vcpkg
 #include <ctime>
 #include <string>
 #include <stdio.h>
