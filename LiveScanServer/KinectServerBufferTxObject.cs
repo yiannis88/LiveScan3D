@@ -12,12 +12,14 @@ public class KinectServerBufferTxObject
     public int TimestampEnqueued { get; set; }
     public int DeltaCreationEnq { get; set; }
     public int DeltaEnq { get; set; }
+    public int SourceID { get; set; }
 
-    public KinectServerBufferTxObject(byte[] lFrameForTx, int timestampEnqueued, int deltaCreationEnq, int deltaEnq)
+    public KinectServerBufferTxObject(byte[] lFrameForTx, int timestampEnqueued, int deltaCreationEnq, int deltaEnq, int sourceID)
     {
         LFrameForTx = lFrameForTx;
         TimestampEnqueued = timestampEnqueued;
         DeltaCreationEnq = deltaCreationEnq;
         DeltaEnq = deltaEnq;
+        SourceID = sourceID;
     }
 }

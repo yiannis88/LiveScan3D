@@ -318,7 +318,8 @@ namespace KinectServer
                     
                     //TODO add local frames to UE
                     if (oTransferServer.UesCurrentlyConnected())
-                            oBufferAlgorithm.BufferedFrames(liveFrame.Vertices.ToList(), liveFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime);
+                        // TODO get real source ID's
+                        oBufferAlgorithm.BufferedFrames(liveFrame.Vertices.ToList(), liveFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 1);
                             
                     if (LocalFrames.Count > 0)
                     {

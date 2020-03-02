@@ -30,6 +30,12 @@ namespace KinectServer
         LoggingInformation logInfo = new LoggingInformation();
         object stringOperationLock = new object();
 
+        public int Count { get
+            {
+                return bufferedObjects.Count;
+            } 
+        }
+
         private void StartThread()
         {
             Thread bufferStats = new Thread(this.CleanBuffer);
@@ -120,22 +126,23 @@ namespace KinectServer
             }
         }
 
-        private byte[] CreateFrameForTransmission(List<float> lVerticesFrame, List<byte> lAllColor, int timestampFrame)
+        private byte[] CreateFrameForTransmission(List<float> lVerticesFrame, List<byte> lAllColor, int timestampFrame, int sourceID)
         {
             int nVerticesToSend = lVerticesFrame.Count;
             int size = (sizeof(short) * nVerticesToSend) + (sizeof(byte) * nVerticesToSend);
-            int hdr_indicator = 1, hdr_size = 4, hdr_compr = 4, hdr_ts = 4;
-            int hdrSize = hdr_indicator + hdr_size + hdr_compr + hdr_ts; //1 byte for indicating the frame type, 4 bytes for size, 4 bytes for compression, and 4 bytes for timestamp (UTC)
+            int hdr_indicator = 1, hdr_source = 1, hdr_size = 4, hdr_compr = 4, hdr_ts = 4;
+            int hdrSize = hdr_indicator + hdr_source + hdr_size + hdr_compr + hdr_ts; //1 byte for indicating the frame type, 1 byte for source ID, 4 bytes for size, 4 bytes for compression, and 4 bytes for timestamp (UTC)
             int sizeBuffer = size + hdrSize;
             byte[] buffer = new byte[sizeBuffer];
             int compression = 0; //not really used
             try
             {
                 short[] sVertices = Array.ConvertAll(lVerticesFrame.ToArray(), x => (short)(x * 1000));
-                buffer[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_SEND_LAST_FRAME; 
-                Buffer.BlockCopy(BitConverter.GetBytes(sizeBuffer - hdrSize), 0, buffer, hdr_indicator, hdr_size);
-                Buffer.BlockCopy(BitConverter.GetBytes(compression), 0, buffer, hdr_indicator + hdr_size, hdr_compr);
-                Buffer.BlockCopy(BitConverter.GetBytes(timestampFrame), 0, buffer, hdr_indicator + hdr_size + hdr_compr, hdr_ts);
+                buffer[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_SEND_LAST_FRAME; // MESSAGE TYPE
+                buffer[1] = (byte)sourceID; // SOURCE
+                Buffer.BlockCopy(BitConverter.GetBytes(sizeBuffer - hdrSize), 0, buffer, hdr_indicator + hdr_source, hdr_size); // SIZE
+                Buffer.BlockCopy(BitConverter.GetBytes(compression), 0, buffer, hdr_indicator + hdr_source + hdr_size, hdr_compr); // COMPRESSION
+                Buffer.BlockCopy(BitConverter.GetBytes(timestampFrame), 0, buffer, hdr_indicator + hdr_source + hdr_size + hdr_compr, hdr_ts); // TS
                 Buffer.BlockCopy(sVertices, 0, buffer, hdrSize, sVertices.Length * 2);
                 Buffer.BlockCopy(lAllColor.ToArray(), 0, buffer, (sVertices.Length * 2) + hdrSize, lAllColor.ToArray().Length);
             }
@@ -148,7 +155,7 @@ namespace KinectServer
         }
 
         //here we save the latest received frames, ready for transmission to the UEs (e.g. hololens)
-        public void BufferedFrames(List<float> lVerticesFrame, List<byte> lAllColor, int timestampFrameOrig, int tsOffsetFromUtcTime)
+        public void BufferedFrames(List<float> lVerticesFrame, List<byte> lAllColor, int timestampFrameOrig, int tsOffsetFromUtcTime, int sourceID)
         {
             if (OffsetFromUtcTS == 0)
             {
@@ -157,7 +164,7 @@ namespace KinectServer
             OffsetFromUtcTS = tsOffsetFromUtcTime;
             if (bufferedObjects.Count < MaxBufferSize)
             {
-                byte[] _enqBuffer = CreateFrameForTransmission(lVerticesFrame, lAllColor, timestampFrameOrig); //create the packet ready for tx
+                byte[] _enqBuffer = CreateFrameForTransmission(lVerticesFrame, lAllColor, timestampFrameOrig, sourceID); //create the packet ready for tx
                 
 
                 int _enqueuedTs = GetTimestamp(tsOffsetFromUtcTime);
@@ -167,7 +174,7 @@ namespace KinectServer
                 lock (stringOperationLock)
                 {
                     Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::Enqueue ___ timestampFrameOrig: " + timestampFrameOrig + " _enqueuedTs " + _enqueuedTs + " _frameSize: " + _enqBuffer.Length + " Buffer: " + bufferedObjects.Count);
-                    bufferedObjects.Enqueue(new KinectServerBufferTxObject(_enqBuffer, _enqueuedTs, _deltaCreationTs, _deltaLastEnq));
+                    bufferedObjects.Enqueue(new KinectServerBufferTxObject(_enqBuffer, _enqueuedTs, _deltaCreationTs, _deltaLastEnq, sourceID));
                 }
             }
         }

@@ -97,8 +97,8 @@ namespace KinectServer
                         }
                         else if (framesToTx.Count == 0)
                         {
-                            int _hdrSizeTx = 13;
-                            byte[] _bufferSend = new byte[_hdrSizeTx]; //header is always 13 bytes; 1 for indicator, 4 for length, 4 for compression, and 4 for timestamp
+                            int _hdrSizeTx = 14;
+                            byte[] _bufferSend = new byte[_hdrSizeTx]; //header is always 14 bytes; 1 for indicator, 1 for source ID, 4 for length, 4 for compression, and 4 for timestamp
                             _bufferSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_NO_FRAME; 
                             NetworkStream _streamT = new NetworkStream(oSocket);
                             Console.WriteLine(DateTime.Now.ToString("HH.mm.ss.fff") + " No frame in queue send signal: " + (int)_bufferSend[0]);
