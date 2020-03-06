@@ -36,6 +36,7 @@
             this.btShowLive = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.lBufferToolstrip = new System.Windows.Forms.ToolStripStatusLabel();
             this.lClientListBox = new System.Windows.Forms.ListBox();
             this.lbSeqName = new System.Windows.Forms.Label();
             this.txtSeqName = new System.Windows.Forms.TextBox();
@@ -49,13 +50,15 @@
             this.btHoldRxFrames = new System.Windows.Forms.Button();
             this.tcpConnections = new System.Windows.Forms.TextBox();
             this.btTcpConnections = new System.Windows.Forms.Button();
-            this.tcpConnectionsUe = new System.Windows.Forms.TextBox();
-            this.btTcpConnectionsUe = new System.Windows.Forms.Button();
             this.OpenGLWorker = new System.ComponentModel.BackgroundWorker();
             this.savingWorker = new System.ComponentModel.BackgroundWorker();
             this.updateWorker = new System.ComponentModel.BackgroundWorker();
             this.refineWorker = new System.ComponentModel.BackgroundWorker();
+            this.bufferStats = new System.ComponentModel.BackgroundWorker();
+            this.ueTCPPicker = new System.Windows.Forms.NumericUpDown();
+            this.label1 = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.ueTCPPicker)).BeginInit();
             this.SuspendLayout();
             // 
             // btStart
@@ -121,8 +124,9 @@
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.statusLabel});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 187);
+            this.statusLabel,
+            this.lBufferToolstrip});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 193);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(600, 22);
             this.statusStrip1.TabIndex = 6;
@@ -132,6 +136,14 @@
             // 
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(0, 17);
+            // 
+            // lBufferToolstrip
+            // 
+            this.lBufferToolstrip.Name = "lBufferToolstrip";
+            this.lBufferToolstrip.Size = new System.Drawing.Size(85, 17);
+            this.lBufferToolstrip.Text = "Buffer Statuses";
+            this.lBufferToolstrip.Visible = false;
+            this.lBufferToolstrip.Click += new System.EventHandler(this.toolStripStatusLabel1_Click);
             // 
             // lClientListBox
             // 
@@ -266,28 +278,6 @@
             this.btTcpConnections.UseVisualStyleBackColor = true;
             this.btTcpConnections.Click += new System.EventHandler(this.btTcpConnections_Click);
             // 
-            // tcpConnectionsUe
-            // 
-            this.tcpConnectionsUe.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.tcpConnectionsUe.Location = new System.Drawing.Point(346, 157);
-            this.tcpConnectionsUe.MaxLength = 10;
-            this.tcpConnectionsUe.Name = "tcpConnectionsUe";
-            this.tcpConnectionsUe.Size = new System.Drawing.Size(116, 20);
-            this.tcpConnectionsUe.TabIndex = 19;
-            this.tcpConnectionsUe.Text = "TCP connections UE";
-            this.tcpConnectionsUe.Enter += new System.EventHandler(this.tcpConnectionsUe_enter);
-            this.tcpConnectionsUe.Leave += new System.EventHandler(this.tcpConnectionsUe_leave);
-            // 
-            // btTcpConnectionsUe
-            // 
-            this.btTcpConnectionsUe.Location = new System.Drawing.Point(472, 157);
-            this.btTcpConnectionsUe.Name = "btTcpConnectionsUe";
-            this.btTcpConnectionsUe.Size = new System.Drawing.Size(116, 23);
-            this.btTcpConnectionsUe.TabIndex = 20;
-            this.btTcpConnectionsUe.Text = "TCP connections UE";
-            this.btTcpConnectionsUe.UseVisualStyleBackColor = true;
-            this.btTcpConnectionsUe.Click += new System.EventHandler(this.btTcpConnectionsUe_Click);
-            // 
             // OpenGLWorker
             // 
             this.OpenGLWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.OpenGLWorker_DoWork);
@@ -309,11 +299,50 @@
             this.refineWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.refineWorker_DoWork);
             this.refineWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.refineWorker_RunWorkerCompleted);
             // 
+            // bufferStats
+            // 
+            this.bufferStats.WorkerSupportsCancellation = true;
+            this.bufferStats.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bufferStats_DoWork);
+            // 
+            // ueTCPPicker
+            // 
+            this.ueTCPPicker.Location = new System.Drawing.Point(472, 128);
+            this.ueTCPPicker.Maximum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.ueTCPPicker.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.ueTCPPicker.Name = "ueTCPPicker";
+            this.ueTCPPicker.Size = new System.Drawing.Size(116, 20);
+            this.ueTCPPicker.TabIndex = 21;
+            this.ueTCPPicker.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.ueTCPPicker.ValueChanged += new System.EventHandler(this.ueTCPPicker_ValueChanged);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(350, 131);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(108, 13);
+            this.label1.TabIndex = 22;
+            this.label1.Text = "UE TCP Connections";
+            // 
             // MainWindowForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(600, 209);
+            this.ClientSize = new System.Drawing.Size(600, 215);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.ueTCPPicker);
             this.Controls.Add(this.btStart);
             this.Controls.Add(this.btSettings);
             this.Controls.Add(this.btCalibrate);
@@ -333,8 +362,6 @@
             this.Controls.Add(this.btHoldRxFrames);
             this.Controls.Add(this.tcpConnections);
             this.Controls.Add(this.btTcpConnections);
-            this.Controls.Add(this.tcpConnectionsUe);
-            this.Controls.Add(this.btTcpConnectionsUe);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.Name = "MainWindowForm";
@@ -343,6 +370,7 @@
             this.Load += new System.EventHandler(this.MainWindowForm_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.ueTCPPicker)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -369,14 +397,16 @@
         private System.Windows.Forms.Button btHoldRxFrames;
         private System.Windows.Forms.TextBox tcpConnections;
         private System.Windows.Forms.Button btTcpConnections;
-        private System.Windows.Forms.TextBox tcpConnectionsUe;
-        private System.Windows.Forms.Button btTcpConnectionsUe;
         private System.ComponentModel.BackgroundWorker recordingWorker;                 
         private System.ComponentModel.BackgroundWorker OpenGLWorker;
         private System.ComponentModel.BackgroundWorker savingWorker;
         private System.ComponentModel.BackgroundWorker updateWorker;                
         private System.ComponentModel.BackgroundWorker refineWorker;
-        private System.Windows.Forms.ToolStripStatusLabel statusLabel;        
+        private System.Windows.Forms.ToolStripStatusLabel statusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel lBufferToolstrip;
+        private System.ComponentModel.BackgroundWorker bufferStats;
+        private System.Windows.Forms.NumericUpDown ueTCPPicker;
+        private System.Windows.Forms.Label label1;
     }
 }
 

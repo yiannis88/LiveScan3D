@@ -30,6 +30,12 @@ namespace BufferLiveShowAlgorithm
         LoggingInformation logInfo = new LoggingInformation();
         object stringOperationLock = new object();
 
+        public int Count { get
+            {
+                return bufferedObjects.Count;
+            } 
+        }
+
         public void StartThread()
         {
             Thread bufferStats = new Thread(this.BufferStats);

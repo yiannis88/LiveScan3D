@@ -150,10 +150,14 @@ namespace KinectServer
                 bServerRunning = false;
 
                 ipAddressMap.Clear();
-                for (int ii = 0; ii < oServerSocket.Count; ii++)
-                    oServerSocket[ii].Close();
+
+                foreach (Socket socket in oServerSocket)
+                    socket.Close();
+
                 tcpConnections = 1;
                 lClientSockets.Clear();
+                oBufferAlgorithm.StopCleaner();
+                oBufferAlgorithm.CleanAllBuffers();
             }
         }
 

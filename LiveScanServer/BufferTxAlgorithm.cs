@@ -30,6 +30,8 @@ namespace KinectServer
         LoggingInformation logInfo = new LoggingInformation();
         object stringOperationLock = new object();
 
+        Thread cleaner;
+
         public int Count { get
             {
                 return bufferedObjects.Count;
@@ -38,9 +40,17 @@ namespace KinectServer
 
         private void StartThread()
         {
-            Thread bufferStats = new Thread(this.CleanBuffer);
-            bufferStats.IsBackground = true;
-            bufferStats.Start();
+            cleaner = new Thread(this.CleanBuffer);
+            cleaner.IsBackground = true;
+            cleaner.Start();
+        }
+
+        public void StopCleaner()
+        {
+            if (cleaner != null)
+            {
+                cleaner.Abort();
+            }
         }
 
         public void AddToTimestampUeList(int index) // this should be called when a new UE connects (irrespectively from the number of parallel connections)
