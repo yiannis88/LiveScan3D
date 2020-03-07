@@ -40,17 +40,8 @@ namespace KinectServer
         BufferTxAlgorithm oBufferAlgorithm; // this is used to store the frames produced by the live show and send them to the UEs!!!
         BufferLiveShowAlgorithm.BufferLiveShowAlgorithm oBufferLiveShowAlgorithm; // this is used to store the frames produced for the live show
 
-        //Those three variables are shared with the OpenGLWindow class and are used to exchange data with it.
-        //Vertices from all of the sensors
-        List<float> lAllVertices = new List<float>();
-        //Color data from all of the sensors
-        List<byte> lAllColors = new List<byte>();
         //Sensor poses from all of the sensors
         List<AffineTransform> lAllCameraPoses = new List<AffineTransform>();
-        //Body data from all of the sensors
-        List<Body> lAllBodies = new List<Body>();
-
-        List<Frame> lClientFrames = new List<Frame>();
 
         bool bServerRunning = false;
         bool bDebugOption = false;
@@ -139,8 +130,14 @@ namespace KinectServer
             {
                 oServer.StartServer();
                 oTransferServer.StartServer();
-                btStart.Text = "Stop server";
 
+                btStart.Text = "Stop server";
+                ueTCPPicker.Enabled = false;
+                
+                updateWorker.RunWorkerAsync();
+                bufferStats.RunWorkerAsync();
+
+                // FOR TESTING ONLY
                 frameCounter = 0;
                 LocalFrames = LoadFrames();
             }
@@ -148,7 +145,12 @@ namespace KinectServer
             {
                 oServer.StopServer();
                 oTransferServer.StopServer();
+                
                 btStart.Text = "Start server";
+                ueTCPPicker.Enabled = true;
+
+                updateWorker.CancelAsync();
+                bufferStats.CancelAsync();
             }
         }
 
@@ -203,23 +205,13 @@ namespace KinectServer
 
             bLiveViewRunning = true;
             oOpenGLWindow = new OpenGLWindow();
-
-            //The variables below are shared between this class and the OpenGLWindow.
-            lock (lAllVertices)
-            {
-                oOpenGLWindow.vertices = lAllVertices;
-                oOpenGLWindow.colors = lAllColors;
-                oOpenGLWindow.cameraPoses = lAllCameraPoses;
-                oOpenGLWindow.bodies = lAllBodies;
-                oOpenGLWindow.settings = oSettings;
-            }
             oOpenGLWindow.Run();
         }
 
         private void OpenGLWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             bLiveViewRunning = false;
-            updateWorker.CancelAsync();
+            //updateWorker.CancelAsync();
         }
 
         private void savingWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -318,7 +310,8 @@ namespace KinectServer
                     
                     //TODO add local frames to UE
                     if (oTransferServer.UesCurrentlyConnected())
-                            oBufferAlgorithm.BufferedFrames(liveFrame.Vertices.ToList(), liveFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime);
+                        // TODO get real source ID's
+                        oBufferAlgorithm.BufferedFrames(liveFrame.Vertices.ToList(), liveFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 1);
                             
                     if (LocalFrames.Count > 0)
                     {
@@ -608,27 +601,13 @@ namespace KinectServer
             }
         }
 
-        private void btTcpConnectionsUe_Click(object sender, EventArgs e)
+        private void ueTCPPicker_ValueChanged(object sender, EventArgs e)
         {
-            // here we want to get the text from holdRxFrames textbox
-            if (tcpConnectionsUe.Text.Length > 0 && tcpConnectionsUe.Text != "TCP connections UE")
-            {
-                if (Regex.IsMatch(tcpConnectionsUe.Text, @"^\d+$")) // return true if input is all numbers
-                {
-                    try
-                    {
-                        tcpConnectionsNumUe = int.Parse(tcpConnectionsUe.Text);
-                        oTransferServer.SetUeTcpConnections(tcpConnectionsNumUe);
+            tcpConnectionsNumUe = (int) ueTCPPicker.Value;
+            oTransferServer.SetUeTcpConnections((int) ueTCPPicker.Value);
 
-                        if (!string.IsNullOrEmpty(strfilePath))
-                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections (UE) is set to: " + tcpConnectionsNumUe);
-                    }
-                    catch (FormatException er)
-                    {
-                        Console.WriteLine("Unable to parse the text box (TCP - UE) with error {0}.", er.Message);
-                    }
-                }
-            }
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections (UE) is set to: " + (int) ueTCPPicker.Value);
         }
 
         private void showLiveLatency_leave(object sender, EventArgs e)
@@ -694,30 +673,12 @@ namespace KinectServer
             }
         }
 
-        private void tcpConnectionsUe_leave(object sender, EventArgs e)
-        {
-            if (tcpConnectionsUe.Text.Length == 0)
-            {
-                tcpConnectionsUe.Text = "TCP connections UE";
-                tcpConnectionsUe.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            }
-        }
-
         private void tcpConnections_enter(object sender, EventArgs e)
         {
             if (tcpConnections.Text == "TCP connections")
             {
                 tcpConnections.Text = "";
                 tcpConnections.ForeColor = System.Drawing.SystemColors.WindowText;
-            }
-        }
-
-        private void tcpConnectionsUe_enter(object sender, EventArgs e)
-        {
-            if (tcpConnectionsUe.Text == "TCP connections UE")
-            {
-                tcpConnectionsUe.Text = "";
-                tcpConnectionsUe.ForeColor = System.Drawing.SystemColors.WindowText;
             }
         }
 
@@ -833,6 +794,29 @@ namespace KinectServer
         }
 
         private void tcpConnections_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void toolStripStatusLabel1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void bufferStats_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = (BackgroundWorker)sender;
+            lBufferToolstrip.Visible = true;
+
+            while (bServerRunning && !worker.CancellationPending)
+            {
+                Thread.Sleep(100);
+                lBufferToolstrip.Text = $"Live: {oBufferLiveShowAlgorithm.Count} Tx: {oBufferAlgorithm.Count}";
+            }
+            lBufferToolstrip.Visible = false;
+        }
+
+        private void tcpConnectionsUe_TextChanged(object sender, EventArgs e)
         {
 
         }
