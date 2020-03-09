@@ -308,7 +308,7 @@
             // 
             this.ueTCPPicker.Location = new System.Drawing.Point(472, 128);
             this.ueTCPPicker.Maximum = new decimal(new int[] {
-            5,
+            10,
             0,
             0,
             0});

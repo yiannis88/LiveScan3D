@@ -317,6 +317,12 @@ namespace KinectServer
                     {
                         var localFrame = LocalFrames[frameCounter % LocalFrames.Count];
                         if (oOpenGLWindow != null) oOpenGLWindow.AddClientFrame(localFrame);
+                        
+                        //TODO add local frames to UE
+                        if (oTransferServer.UesCurrentlyConnected())
+                            // TODO get real source ID's
+                            oBufferAlgorithm.BufferedFrames(localFrame.Vertices.ToList(), localFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 2);
+
                         frameCounter++;
                     }
                                            
@@ -811,7 +817,7 @@ namespace KinectServer
             while (bServerRunning && !worker.CancellationPending)
             {
                 Thread.Sleep(100);
-                lBufferToolstrip.Text = $"Live: {oBufferLiveShowAlgorithm.Count} Tx: {oBufferAlgorithm.Count}";
+                lBufferToolstrip.Text = $"Live: {oBufferLiveShowAlgorithm.Count} Tx: {oBufferAlgorithm.Count} UEs: {oTransferServer.UesCurrentlyConnected()}";
             }
             lBufferToolstrip.Visible = false;
         }

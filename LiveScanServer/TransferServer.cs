@@ -75,7 +75,7 @@ namespace KinectServer
 
         List<Socket> oServerSocket = new List<Socket>();
         List<TransferSocket> lClientSockets = new List<TransferSocket>();
-        private List<int> oPortsPool = new List<int>(5) { 48006, 48007, 48008, 48009, 48010 };
+        private List<int> oPortsPool = new List<int>(10) { 48006, 48007, 48008, 48009, 48010, 48011, 48012, 48013, 48014, 48015 };
         private int tcpConnections = 1;
 
         BufferTxAlgorithm oBufferAlgorithm;
