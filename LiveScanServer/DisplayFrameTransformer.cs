@@ -17,6 +17,7 @@
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace KinectServer
@@ -25,12 +26,12 @@ namespace KinectServer
     public class DisplayFrameTransformer{
 
         public DisplayFrameTransformer(){}
-        public DisplayFrameTransformer(Dictionary<int, Frame> clientFrames){
+        public DisplayFrameTransformer(ConcurrentDictionary<int, Frame> clientFrames){
             ClientFrames = clientFrames;
         }
 
         // shared variable with OpenGL window containing live client frames indexed by clientNumber 
-        public Dictionary<int, Frame> ClientFrames { get; set; }
+        public ConcurrentDictionary<int, Frame> ClientFrames { get; set; }
         // also indexed by clientNumber
         private Dictionary<int, ClientPosition> ClientOverrides = new Dictionary<int, ClientPosition>();
 

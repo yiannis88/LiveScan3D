@@ -48,8 +48,6 @@
             this.btshowLiveLatencyBtn = new System.Windows.Forms.Button();
             this.holdRxFrames = new System.Windows.Forms.TextBox();
             this.btHoldRxFrames = new System.Windows.Forms.Button();
-            this.tcpConnections = new System.Windows.Forms.TextBox();
-            this.btTcpConnections = new System.Windows.Forms.Button();
             this.OpenGLWorker = new System.ComponentModel.BackgroundWorker();
             this.savingWorker = new System.ComponentModel.BackgroundWorker();
             this.updateWorker = new System.ComponentModel.BackgroundWorker();
@@ -57,8 +55,11 @@
             this.bufferStats = new System.ComponentModel.BackgroundWorker();
             this.ueTCPPicker = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
+            this.TCPPicker = new System.Windows.Forms.NumericUpDown();
+            this.label2 = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ueTCPPicker)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.TCPPicker)).BeginInit();
             this.SuspendLayout();
             // 
             // btStart
@@ -255,29 +256,6 @@
             this.btHoldRxFrames.UseVisualStyleBackColor = true;
             this.btHoldRxFrames.Click += new System.EventHandler(this.btHoldRxFrames_Click);
             // 
-            // tcpConnections
-            // 
-            this.tcpConnections.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.tcpConnections.Location = new System.Drawing.Point(346, 99);
-            this.tcpConnections.MaxLength = 10;
-            this.tcpConnections.Name = "tcpConnections";
-            this.tcpConnections.Size = new System.Drawing.Size(116, 20);
-            this.tcpConnections.TabIndex = 17;
-            this.tcpConnections.Text = "TCP connections";
-            this.tcpConnections.TextChanged += new System.EventHandler(this.tcpConnections_TextChanged);
-            this.tcpConnections.Enter += new System.EventHandler(this.tcpConnections_enter);
-            this.tcpConnections.Leave += new System.EventHandler(this.tcpConnections_leave);
-            // 
-            // btTcpConnections
-            // 
-            this.btTcpConnections.Location = new System.Drawing.Point(472, 99);
-            this.btTcpConnections.Name = "btTcpConnections";
-            this.btTcpConnections.Size = new System.Drawing.Size(116, 23);
-            this.btTcpConnections.TabIndex = 18;
-            this.btTcpConnections.Text = "TCP connections";
-            this.btTcpConnections.UseVisualStyleBackColor = true;
-            this.btTcpConnections.Click += new System.EventHandler(this.btTcpConnections_Click);
-            // 
             // OpenGLWorker
             // 
             this.OpenGLWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.OpenGLWorker_DoWork);
@@ -330,17 +308,51 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(350, 131);
+            this.label1.Location = new System.Drawing.Point(358, 130);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(108, 13);
             this.label1.TabIndex = 22;
             this.label1.Text = "UE TCP Connections";
+            // 
+            // TCPPicker
+            // 
+            this.TCPPicker.Location = new System.Drawing.Point(472, 102);
+            this.TCPPicker.Maximum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.TCPPicker.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.TCPPicker.Name = "TCPPicker";
+            this.TCPPicker.Size = new System.Drawing.Size(116, 20);
+            this.TCPPicker.TabIndex = 23;
+            this.TCPPicker.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.TCPPicker.ValueChanged += new System.EventHandler(this.TCPPicker_ValueChanged);
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(376, 104);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(90, 13);
+            this.label2.TabIndex = 24;
+            this.label2.Text = "TCP Connections";
             // 
             // MainWindowForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(600, 215);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.TCPPicker);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.ueTCPPicker);
             this.Controls.Add(this.btStart);
@@ -360,8 +372,6 @@
             this.Controls.Add(this.btshowLiveLatencyBtn);
             this.Controls.Add(this.holdRxFrames);
             this.Controls.Add(this.btHoldRxFrames);
-            this.Controls.Add(this.tcpConnections);
-            this.Controls.Add(this.btTcpConnections);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.Name = "MainWindowForm";
@@ -371,6 +381,7 @@
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ueTCPPicker)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.TCPPicker)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -395,8 +406,6 @@
         private System.Windows.Forms.Button btshowLiveLatencyBtn;
         private System.Windows.Forms.TextBox holdRxFrames;
         private System.Windows.Forms.Button btHoldRxFrames;
-        private System.Windows.Forms.TextBox tcpConnections;
-        private System.Windows.Forms.Button btTcpConnections;
         private System.ComponentModel.BackgroundWorker recordingWorker;                 
         private System.ComponentModel.BackgroundWorker OpenGLWorker;
         private System.ComponentModel.BackgroundWorker savingWorker;
@@ -407,6 +416,8 @@
         private System.ComponentModel.BackgroundWorker bufferStats;
         private System.Windows.Forms.NumericUpDown ueTCPPicker;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.NumericUpDown TCPPicker;
+        private System.Windows.Forms.Label label2;
     }
 }
 

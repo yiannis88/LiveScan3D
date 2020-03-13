@@ -132,6 +132,7 @@ namespace KinectServer
                 oTransferServer.StartServer();
 
                 btStart.Text = "Stop server";
+                TCPPicker.Enabled = false;
                 ueTCPPicker.Enabled = false;
                 
                 updateWorker.RunWorkerAsync();
@@ -147,6 +148,7 @@ namespace KinectServer
                 oTransferServer.StopServer();
                 
                 btStart.Text = "Start server";
+                TCPPicker.Enabled = true;
                 ueTCPPicker.Enabled = true;
 
                 updateWorker.CancelAsync();
@@ -588,36 +590,22 @@ namespace KinectServer
             }
         }
 
-        private void btTcpConnections_Click(object sender, EventArgs e)
+        private void TCPPicker_ValueChanged(object sender, EventArgs e)
         {
-            // here we want to get the text from holdRxFrames textbox
-            if (tcpConnections.Text.Length > 0 && tcpConnections.Text != "TCP connections")
-            {
-                if (Regex.IsMatch(tcpConnections.Text, @"^\d+$")) // return true if input is all numbers
-                {
-                    try
-                    {
-                        tcpConnectionsNum = int.Parse(tcpConnections.Text);
-                        oServer.SetTcpConnections(tcpConnectionsNum);
+            tcpConnectionsNum = (int)TCPPicker.Value;
+            oServer.SetTcpConnections(tcpConnectionsNum);
 
-                        if (!string.IsNullOrEmpty(strfilePath))
-                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections is set to: " + tcpConnectionsNum);
-                    }
-                    catch (FormatException er)
-                    {
-                        Console.WriteLine("Unable to parse the text box (TCP) with error {0}.", er.Message);
-                    }
-                }
-            }
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections is set to: " + tcpConnectionsNum);
         }
 
         private void ueTCPPicker_ValueChanged(object sender, EventArgs e)
         {
             tcpConnectionsNumUe = (int) ueTCPPicker.Value;
-            oTransferServer.SetUeTcpConnections((int) ueTCPPicker.Value);
+            oTransferServer.SetUeTcpConnections(tcpConnectionsNumUe);
 
             if (!string.IsNullOrEmpty(strfilePath))
-                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections (UE) is set to: " + (int) ueTCPPicker.Value);
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections (UE) is set to: " + tcpConnectionsNumUe);
         }
 
         private void showLiveLatency_leave(object sender, EventArgs e)
@@ -671,24 +659,6 @@ namespace KinectServer
             {
                 holdRxFrames.Text = "";
                 holdRxFrames.ForeColor = System.Drawing.SystemColors.WindowText;
-            }
-        }
-
-        private void tcpConnections_leave(object sender, EventArgs e)
-        {
-            if (tcpConnections.Text.Length == 0)
-            {
-                tcpConnections.Text = "TCP connections";
-                tcpConnections.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            }
-        }
-
-        private void tcpConnections_enter(object sender, EventArgs e)
-        {
-            if (tcpConnections.Text == "TCP connections")
-            {
-                tcpConnections.Text = "";
-                tcpConnections.ForeColor = System.Drawing.SystemColors.WindowText;
             }
         }
 

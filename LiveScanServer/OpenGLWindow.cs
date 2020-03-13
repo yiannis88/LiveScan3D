@@ -16,6 +16,7 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 enum ECameraMode
@@ -55,7 +56,7 @@ namespace KinectServer
         float[] targetPosition = new float[3];
 
         // live storage of frames indexed by client ID
-        public Dictionary<int, Frame> clientFrames = new Dictionary<int, Frame>();
+        public ConcurrentDictionary<int, Frame> clientFrames = new ConcurrentDictionary<int, Frame>();
         // client id of currently selected source for control, -1 = none
         public int SelectedFigure = -1;
         // object controlling placement of sources, used for retrieving transformations before display
@@ -381,8 +382,8 @@ namespace KinectServer
                     CameraMode = ECameraMode.CAMERA_TRACK;
                     break;
             }
-            MousePrevious.X = OpenTK.Input.Mouse.GetState().X; //cuz Mouse.X is obselete, hence I have to use Mouse.GetState().X yanis May 2019
-            MousePrevious.Y = OpenTK.Input.Mouse.GetState().Y; //cuz Mouse.Y is obselete, hence I have to use Mouse.GetState().Y yanis May 2019
+            MousePrevious.X = e.X;
+            MousePrevious.Y = e.Y;
         }
 
         // used by main window to supply display with live frames
