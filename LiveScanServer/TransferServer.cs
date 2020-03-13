@@ -154,7 +154,6 @@ namespace KinectServer
                 foreach (Socket socket in oServerSocket)
                     socket.Close();
 
-                tcpConnections = 1;
                 lClientSockets.Clear();
                 oBufferAlgorithm.StopCleaner();
                 oBufferAlgorithm.CleanAllBuffers();

@@ -36,18 +36,14 @@
             this.btShowLive = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.lrxFreqToolstrip = new System.Windows.Forms.ToolStripStatusLabel();
+            this.lliveFreqToolstrip = new System.Windows.Forms.ToolStripStatusLabel();
             this.lBufferToolstrip = new System.Windows.Forms.ToolStripStatusLabel();
             this.lClientListBox = new System.Windows.Forms.ListBox();
             this.lbSeqName = new System.Windows.Forms.Label();
             this.txtSeqName = new System.Windows.Forms.TextBox();
             this.btDebug = new System.Windows.Forms.Button();
             this.recordingWorker = new System.ComponentModel.BackgroundWorker();
-            this.reqLatency = new System.Windows.Forms.TextBox();
-            this.btLatencyBtn = new System.Windows.Forms.Button();
-            this.showLiveLatency = new System.Windows.Forms.TextBox();
-            this.btshowLiveLatencyBtn = new System.Windows.Forms.Button();
-            this.holdRxFrames = new System.Windows.Forms.TextBox();
-            this.btHoldRxFrames = new System.Windows.Forms.Button();
             this.OpenGLWorker = new System.ComponentModel.BackgroundWorker();
             this.savingWorker = new System.ComponentModel.BackgroundWorker();
             this.updateWorker = new System.ComponentModel.BackgroundWorker();
@@ -57,9 +53,18 @@
             this.label1 = new System.Windows.Forms.Label();
             this.TCPPicker = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
+            this.rxBufferHoldPicker = new System.Windows.Forms.NumericUpDown();
+            this.label3 = new System.Windows.Forms.Label();
+            this.liveLatencyPicker = new System.Windows.Forms.NumericUpDown();
+            this.label4 = new System.Windows.Forms.Label();
+            this.requestLatencyPicker = new System.Windows.Forms.NumericUpDown();
+            this.label5 = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ueTCPPicker)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TCPPicker)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.rxBufferHoldPicker)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.liveLatencyPicker)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.requestLatencyPicker)).BeginInit();
             this.SuspendLayout();
             // 
             // btStart
@@ -126,25 +131,41 @@
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.statusLabel,
+            this.lrxFreqToolstrip,
+            this.lliveFreqToolstrip,
             this.lBufferToolstrip});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 193);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 191);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(600, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(600, 24);
             this.statusStrip1.TabIndex = 6;
             this.statusStrip1.Text = "statusStrip1";
             // 
             // statusLabel
             // 
             this.statusLabel.Name = "statusLabel";
-            this.statusLabel.Size = new System.Drawing.Size(0, 17);
+            this.statusLabel.Size = new System.Drawing.Size(0, 19);
+            // 
+            // lrxFreqToolstrip
+            // 
+            this.lrxFreqToolstrip.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Right;
+            this.lrxFreqToolstrip.BorderStyle = System.Windows.Forms.Border3DStyle.Bump;
+            this.lrxFreqToolstrip.Name = "lrxFreqToolstrip";
+            this.lrxFreqToolstrip.Size = new System.Drawing.Size(44, 19);
+            this.lrxFreqToolstrip.Text = "rxFreq";
+            // 
+            // lliveFreqToolstrip
+            // 
+            this.lliveFreqToolstrip.BorderStyle = System.Windows.Forms.Border3DStyle.Etched;
+            this.lliveFreqToolstrip.Name = "lliveFreqToolstrip";
+            this.lliveFreqToolstrip.Size = new System.Drawing.Size(48, 19);
+            this.lliveFreqToolstrip.Text = "liveFreq";
             // 
             // lBufferToolstrip
             // 
             this.lBufferToolstrip.Name = "lBufferToolstrip";
-            this.lBufferToolstrip.Size = new System.Drawing.Size(85, 17);
+            this.lBufferToolstrip.Size = new System.Drawing.Size(85, 19);
             this.lBufferToolstrip.Text = "Buffer Statuses";
             this.lBufferToolstrip.Visible = false;
-            this.lBufferToolstrip.Click += new System.EventHandler(this.toolStripStatusLabel1_Click);
             // 
             // lClientListBox
             // 
@@ -152,31 +173,30 @@
             this.lClientListBox.HorizontalScrollbar = true;
             this.lClientListBox.Location = new System.Drawing.Point(117, 12);
             this.lClientListBox.Name = "lClientListBox";
-            this.lClientListBox.Size = new System.Drawing.Size(219, 108);
+            this.lClientListBox.Size = new System.Drawing.Size(219, 134);
             this.lClientListBox.TabIndex = 7;
             // 
             // lbSeqName
             // 
             this.lbSeqName.AutoSize = true;
-            this.lbSeqName.Location = new System.Drawing.Point(123, 157);
+            this.lbSeqName.Location = new System.Drawing.Point(381, 145);
             this.lbSeqName.Name = "lbSeqName";
-            this.lbSeqName.Size = new System.Drawing.Size(88, 13);
+            this.lbSeqName.Size = new System.Drawing.Size(85, 13);
             this.lbSeqName.TabIndex = 8;
-            this.lbSeqName.Text = "Sequence name:";
-            this.lbSeqName.Click += new System.EventHandler(this.LbSeqName_Click);
+            this.lbSeqName.Text = "Sequence name";
             // 
             // txtSeqName
             // 
-            this.txtSeqName.Location = new System.Drawing.Point(233, 155);
+            this.txtSeqName.Location = new System.Drawing.Point(472, 142);
             this.txtSeqName.MaxLength = 40;
             this.txtSeqName.Name = "txtSeqName";
-            this.txtSeqName.Size = new System.Drawing.Size(106, 20);
+            this.txtSeqName.Size = new System.Drawing.Size(116, 20);
             this.txtSeqName.TabIndex = 9;
             this.txtSeqName.Text = "noname";
             // 
             // btDebug
             // 
-            this.btDebug.Location = new System.Drawing.Point(233, 123);
+            this.btDebug.Location = new System.Drawing.Point(117, 154);
             this.btDebug.Name = "btDebug";
             this.btDebug.Size = new System.Drawing.Size(105, 23);
             this.btDebug.TabIndex = 10;
@@ -189,72 +209,6 @@
             this.recordingWorker.WorkerSupportsCancellation = true;
             this.recordingWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.recordingWorker_DoWork);
             this.recordingWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.recordingWorker_RunWorkerCompleted);
-            // 
-            // reqLatency
-            // 
-            this.reqLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.reqLatency.Location = new System.Drawing.Point(346, 12);
-            this.reqLatency.MaxLength = 10;
-            this.reqLatency.Name = "reqLatency";
-            this.reqLatency.Size = new System.Drawing.Size(116, 20);
-            this.reqLatency.TabIndex = 11;
-            this.reqLatency.Text = "Request Latency [ms]";
-            this.reqLatency.Enter += new System.EventHandler(this.reqLatency_enter);
-            this.reqLatency.Leave += new System.EventHandler(this.reqLatency_leave);
-            // 
-            // btLatencyBtn
-            // 
-            this.btLatencyBtn.Location = new System.Drawing.Point(472, 12);
-            this.btLatencyBtn.Name = "btLatencyBtn";
-            this.btLatencyBtn.Size = new System.Drawing.Size(116, 23);
-            this.btLatencyBtn.TabIndex = 12;
-            this.btLatencyBtn.Text = "Request Latency";
-            this.btLatencyBtn.UseVisualStyleBackColor = true;
-            this.btLatencyBtn.Click += new System.EventHandler(this.btLatencyBtn_Click);
-            // 
-            // showLiveLatency
-            // 
-            this.showLiveLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.showLiveLatency.Location = new System.Drawing.Point(346, 41);
-            this.showLiveLatency.MaxLength = 10;
-            this.showLiveLatency.Name = "showLiveLatency";
-            this.showLiveLatency.Size = new System.Drawing.Size(116, 20);
-            this.showLiveLatency.TabIndex = 13;
-            this.showLiveLatency.Text = "ShowLive Latency [ms]";
-            this.showLiveLatency.Enter += new System.EventHandler(this.showLiveLatency_enter);
-            this.showLiveLatency.Leave += new System.EventHandler(this.showLiveLatency_leave);
-            // 
-            // btshowLiveLatencyBtn
-            // 
-            this.btshowLiveLatencyBtn.Location = new System.Drawing.Point(472, 41);
-            this.btshowLiveLatencyBtn.Name = "btshowLiveLatencyBtn";
-            this.btshowLiveLatencyBtn.Size = new System.Drawing.Size(116, 23);
-            this.btshowLiveLatencyBtn.TabIndex = 14;
-            this.btshowLiveLatencyBtn.Text = "ShowLive Latency";
-            this.btshowLiveLatencyBtn.UseVisualStyleBackColor = true;
-            this.btshowLiveLatencyBtn.Click += new System.EventHandler(this.btshowLiveLatencyBtn_Click);
-            // 
-            // holdRxFrames
-            // 
-            this.holdRxFrames.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.holdRxFrames.Location = new System.Drawing.Point(346, 70);
-            this.holdRxFrames.MaxLength = 10;
-            this.holdRxFrames.Name = "holdRxFrames";
-            this.holdRxFrames.Size = new System.Drawing.Size(116, 20);
-            this.holdRxFrames.TabIndex = 15;
-            this.holdRxFrames.Text = "Rx Buffer Hold [pkts]";
-            this.holdRxFrames.Enter += new System.EventHandler(this.holdRxFrames_enter);
-            this.holdRxFrames.Leave += new System.EventHandler(this.holdRxFrames_leave);
-            // 
-            // btHoldRxFrames
-            // 
-            this.btHoldRxFrames.Location = new System.Drawing.Point(472, 70);
-            this.btHoldRxFrames.Name = "btHoldRxFrames";
-            this.btHoldRxFrames.Size = new System.Drawing.Size(116, 23);
-            this.btHoldRxFrames.TabIndex = 16;
-            this.btHoldRxFrames.Text = "Buffer Hold";
-            this.btHoldRxFrames.UseVisualStyleBackColor = true;
-            this.btHoldRxFrames.Click += new System.EventHandler(this.btHoldRxFrames_Click);
             // 
             // OpenGLWorker
             // 
@@ -284,7 +238,7 @@
             // 
             // ueTCPPicker
             // 
-            this.ueTCPPicker.Location = new System.Drawing.Point(472, 128);
+            this.ueTCPPicker.Location = new System.Drawing.Point(472, 116);
             this.ueTCPPicker.Maximum = new decimal(new int[] {
             10,
             0,
@@ -308,7 +262,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(358, 130);
+            this.label1.Location = new System.Drawing.Point(358, 118);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(108, 13);
             this.label1.TabIndex = 22;
@@ -316,7 +270,7 @@
             // 
             // TCPPicker
             // 
-            this.TCPPicker.Location = new System.Drawing.Point(472, 102);
+            this.TCPPicker.Location = new System.Drawing.Point(472, 90);
             this.TCPPicker.Maximum = new decimal(new int[] {
             5,
             0,
@@ -340,17 +294,114 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(376, 104);
+            this.label2.Location = new System.Drawing.Point(376, 92);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(90, 13);
             this.label2.TabIndex = 24;
             this.label2.Text = "TCP Connections";
+            // 
+            // rxBufferHoldPicker
+            // 
+            this.rxBufferHoldPicker.Location = new System.Drawing.Point(472, 64);
+            this.rxBufferHoldPicker.Maximum = new decimal(new int[] {
+            5000,
+            0,
+            0,
+            0});
+            this.rxBufferHoldPicker.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.rxBufferHoldPicker.Name = "rxBufferHoldPicker";
+            this.rxBufferHoldPicker.Size = new System.Drawing.Size(116, 20);
+            this.rxBufferHoldPicker.TabIndex = 25;
+            this.rxBufferHoldPicker.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.rxBufferHoldPicker.ValueChanged += new System.EventHandler(this.rxBufferHoldPicker_ValueChanged);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(361, 66);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(105, 13);
+            this.label3.TabIndex = 26;
+            this.label3.Text = "Rx Buffer Hold [pkts]";
+            // 
+            // liveLatencyPicker
+            // 
+            this.liveLatencyPicker.Location = new System.Drawing.Point(472, 38);
+            this.liveLatencyPicker.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.liveLatencyPicker.Minimum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.liveLatencyPicker.Name = "liveLatencyPicker";
+            this.liveLatencyPicker.Size = new System.Drawing.Size(116, 20);
+            this.liveLatencyPicker.TabIndex = 27;
+            this.liveLatencyPicker.Value = new decimal(new int[] {
+            20,
+            0,
+            0,
+            0});
+            this.liveLatencyPicker.ValueChanged += new System.EventHandler(this.liveLatencyPicker_ValueChanged);
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(341, 40);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(125, 13);
+            this.label4.TabIndex = 28;
+            this.label4.Text = "Live Update Interval [ms]";
+            // 
+            // requestLatencyPicker
+            // 
+            this.requestLatencyPicker.Location = new System.Drawing.Point(472, 12);
+            this.requestLatencyPicker.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.requestLatencyPicker.Name = "requestLatencyPicker";
+            this.requestLatencyPicker.Size = new System.Drawing.Size(116, 20);
+            this.requestLatencyPicker.TabIndex = 29;
+            this.requestLatencyPicker.Value = new decimal(new int[] {
+            15,
+            0,
+            0,
+            0});
+            this.requestLatencyPicker.ValueChanged += new System.EventHandler(this.requestLatencyPicker_ValueChanged);
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(343, 14);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(123, 13);
+            this.label5.TabIndex = 30;
+            this.label5.Text = "Rx Request Interval [ms]";
             // 
             // MainWindowForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(600, 215);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.requestLatencyPicker);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.liveLatencyPicker);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.rxBufferHoldPicker);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.TCPPicker);
             this.Controls.Add(this.label1);
@@ -366,12 +417,6 @@
             this.Controls.Add(this.lbSeqName);
             this.Controls.Add(this.txtSeqName);
             this.Controls.Add(this.btDebug);
-            this.Controls.Add(this.reqLatency);
-            this.Controls.Add(this.btLatencyBtn);
-            this.Controls.Add(this.showLiveLatency);
-            this.Controls.Add(this.btshowLiveLatencyBtn);
-            this.Controls.Add(this.holdRxFrames);
-            this.Controls.Add(this.btHoldRxFrames);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.Name = "MainWindowForm";
@@ -382,6 +427,9 @@
             this.statusStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ueTCPPicker)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.TCPPicker)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.rxBufferHoldPicker)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.liveLatencyPicker)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.requestLatencyPicker)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -400,12 +448,6 @@
         private System.Windows.Forms.Label lbSeqName;
         private System.Windows.Forms.TextBox txtSeqName;
         private System.Windows.Forms.Button btDebug;
-        private System.Windows.Forms.TextBox reqLatency;
-        private System.Windows.Forms.Button btLatencyBtn;
-        private System.Windows.Forms.TextBox showLiveLatency;
-        private System.Windows.Forms.Button btshowLiveLatencyBtn;
-        private System.Windows.Forms.TextBox holdRxFrames;
-        private System.Windows.Forms.Button btHoldRxFrames;
         private System.ComponentModel.BackgroundWorker recordingWorker;                 
         private System.ComponentModel.BackgroundWorker OpenGLWorker;
         private System.ComponentModel.BackgroundWorker savingWorker;
@@ -418,6 +460,14 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.NumericUpDown TCPPicker;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.NumericUpDown rxBufferHoldPicker;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.NumericUpDown liveLatencyPicker;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.NumericUpDown requestLatencyPicker;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.ToolStripStatusLabel lrxFreqToolstrip;
+        private System.Windows.Forms.ToolStripStatusLabel lliveFreqToolstrip;
     }
 }
 

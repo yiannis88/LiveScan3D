@@ -423,7 +423,6 @@ namespace KinectServer
                 ipAddressBufferMap.Clear();
                 foreach (Socket socket in oServerSocket)
                     socket.Close();
-                tcpConnections = 1;
                 SocketListChanged();
             }
         }

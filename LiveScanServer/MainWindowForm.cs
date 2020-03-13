@@ -48,8 +48,8 @@ namespace KinectServer
         bool bRecording = false;
         bool bSaving = false;
 
-        int reqDelayClient = 1; // the min interval when server will be requesting for the latest captured frame from the sensors
-        int showLiveDelay = Math.Max(15, 20); // the min interval when server will be displaying the hologram on live show 
+        int reqDelayClient = 15; // the min interval when server will be requesting for the latest captured frame from the sensors
+        int showLiveDelay = 20; // the min interval when server will be displaying the hologram on live show 
         int reqDelayUe = 10; // the min interval when server processes the requests for the UEs
         int rxBufferHoldPkts = 1; // by default, the threshold is set to 1 (the stored pkts are less than rxBufferHoldPkts, then server requests) 
         int tcpConnectionsNum = 1; // by default the number of TCP connections is set to 1
@@ -134,9 +134,11 @@ namespace KinectServer
                 btStart.Text = "Stop server";
                 TCPPicker.Enabled = false;
                 ueTCPPicker.Enabled = false;
-                
-                updateWorker.RunWorkerAsync();
-                bufferStats.RunWorkerAsync();
+
+                if (!updateWorker.IsBusy)
+                    updateWorker.RunWorkerAsync();
+                if (!bufferStats.IsBusy)
+                    bufferStats.RunWorkerAsync();
 
                 // FOR TESTING ONLY
                 frameCounter = 0;
@@ -153,6 +155,8 @@ namespace KinectServer
 
                 updateWorker.CancelAsync();
                 bufferStats.CancelAsync();
+
+                LocalFrames = new List<Frame>();
             }
         }
 
@@ -525,69 +529,30 @@ namespace KinectServer
             }
         }
 
-        private void btLatencyBtn_Click(object sender, EventArgs e)
+        private void requestLatencyPicker_ValueChanged(object sender, EventArgs e)
         {
-            // here we want to get the text from showLiveLatency textbox
-            if (reqLatency.Text.Length > 0 && reqLatency.Text != "Request Latency [ms]")
-            {
-                if (Regex.IsMatch(reqLatency.Text, @"^\d+$")) // return true if input is all numbers
-                {
-                    try
-                    {
-                        reqDelayClient = int.Parse(reqLatency.Text);
-                        oServer.SetReqDelayClient(reqDelayClient);
-                        if (!string.IsNullOrEmpty(strfilePath))
-                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " request interval changed and set to: " + reqDelayClient);
-                    }
-                    catch (FormatException er)
-                    {
-                        Console.WriteLine("Unable to parse the text box with error {0}.", er.Message);
-                    }
-                }
-            }
+            reqDelayClient = (int)requestLatencyPicker.Value;
+            oServer.SetReqDelayClient(reqDelayClient);
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " request interval changed and set to: " + reqDelayClient);
+            updateRxFrequency();
         }
 
-        private void btshowLiveLatencyBtn_Click(object sender, EventArgs e)
+        private void liveLatencyPicker_ValueChanged(object sender, EventArgs e)
         {
-            // here we want to get the text from showLiveLatency textbox
-            if (showLiveLatency.Text.Length > 0 && showLiveLatency.Text != "ShowLive Latency [ms]")
-            {
-                if (Regex.IsMatch(showLiveLatency.Text, @"^\d+$")) // return true if input is all numbers
-                {
-                    try
-                    {
-                        showLiveDelay = Math.Max(int.Parse(showLiveLatency.Text), 5); //minimum of 5ms updating the live show
-                        if (!string.IsNullOrEmpty(strfilePath))
-                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " show live interval changed and set to: " + showLiveDelay);
-                    }
-                    catch (FormatException er)
-                    {
-                        Console.WriteLine("Unable to parse the text box with error {0}.", er.Message);
-                    }
-                }
-            }
+            showLiveDelay = (int)liveLatencyPicker.Value;
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " show live interval changed and set to: " + showLiveDelay);
+            updateLiveFrequency();
         }
 
-        private void btHoldRxFrames_Click(object sender, EventArgs e)
+        private void rxBufferHoldPicker_ValueChanged(object sender, EventArgs e)
         {
-            // here we want to get the text from holdRxFrames textbox
-            if (holdRxFrames.Text.Length > 0 && holdRxFrames.Text != "Rx Buffer Hold [pkts]")
-            {
-                if (Regex.IsMatch(holdRxFrames.Text, @"^\d+$")) // return true if input is all numbers
-                {
-                    try
-                    {
-                        rxBufferHoldPkts = int.Parse(holdRxFrames.Text);
-                        oServer.SetRxBufferHoldScheme(rxBufferHoldPkts);
-                        if (!string.IsNullOrEmpty(strfilePath))
-                            logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " the rx-buffer threshold (hold) changed to: " + rxBufferHoldPkts);
-                    }
-                    catch (FormatException er)
-                    {
-                        Console.WriteLine("Unable to parse the text box with error {0}.", er.Message);
-                    }
-                }
-            }
+            rxBufferHoldPkts = (int)rxBufferHoldPicker.Value;
+            oServer.SetRxBufferHoldScheme(rxBufferHoldPkts);
+
+            if (!string.IsNullOrEmpty(strfilePath))
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " the rx-buffer threshold (hold) changed to: " + rxBufferHoldPkts);
         }
 
         private void TCPPicker_ValueChanged(object sender, EventArgs e)
@@ -596,7 +561,7 @@ namespace KinectServer
             oServer.SetTcpConnections(tcpConnectionsNum);
 
             if (!string.IsNullOrEmpty(strfilePath))
-                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections is set to: " + tcpConnectionsNum);
+                logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of Rx TCP connections is set to: " + tcpConnectionsNum);
         }
 
         private void ueTCPPicker_ValueChanged(object sender, EventArgs e)
@@ -606,60 +571,6 @@ namespace KinectServer
 
             if (!string.IsNullOrEmpty(strfilePath))
                 logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections (UE) is set to: " + tcpConnectionsNumUe);
-        }
-
-        private void showLiveLatency_leave(object sender, EventArgs e)
-        {
-            if (showLiveLatency.Text.Length == 0)
-            {
-                showLiveLatency.Text = "ShowLive Latency [ms]";
-                showLiveLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            }
-        }
-
-        private void showLiveLatency_enter(object sender, EventArgs e)
-        {
-            if (showLiveLatency.Text == "ShowLive Latency [ms]")
-            {
-                showLiveLatency.Text = "";
-                showLiveLatency.ForeColor = System.Drawing.SystemColors.WindowText;
-            }
-        }
-
-        private void reqLatency_leave(object sender, EventArgs e)
-        {
-            if (reqLatency.Text.Length == 0)
-            {
-                reqLatency.Text = "Request Latency [ms]";
-                reqLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            }
-        }
-
-        private void reqLatency_enter(object sender, EventArgs e)
-        {
-            if (reqLatency.Text == "Request Latency [ms]")
-            {
-                reqLatency.Text = "";
-                reqLatency.ForeColor = System.Drawing.SystemColors.WindowText;
-            }
-        }
-
-        private void holdRxFrames_leave(object sender, EventArgs e)
-        {
-            if (holdRxFrames.Text.Length == 0)
-            {
-                holdRxFrames.Text = "Rx Buffer Hold [pkts]";
-                holdRxFrames.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            }
-        }
-
-        private void holdRxFrames_enter(object sender, EventArgs e)
-        {
-            if (holdRxFrames.Text == "Rx Buffer Hold [pkts]")
-            {
-                holdRxFrames.Text = "";
-                holdRxFrames.ForeColor = System.Drawing.SystemColors.WindowText;
-            }
         }
 
         private void btDebug_Click(object sender, EventArgs e)
@@ -765,22 +676,8 @@ namespace KinectServer
 
         private void MainWindowForm_Load(object sender, EventArgs e)
         {
-
-        }
-
-        private void LbSeqName_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void tcpConnections_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void toolStripStatusLabel1_Click(object sender, EventArgs e)
-        {
-
+            updateRxFrequency();
+            updateLiveFrequency();
         }
 
         private void bufferStats_DoWork(object sender, DoWorkEventArgs e)
@@ -796,9 +693,16 @@ namespace KinectServer
             lBufferToolstrip.Visible = false;
         }
 
-        private void tcpConnectionsUe_TextChanged(object sender, EventArgs e)
+        private void updateRxFrequency()
         {
+            double rxFreq = Math.Round(1/ (((double) reqDelayClient) / 1000), 2);
+            lrxFreqToolstrip.Text = $"Rx: {rxFreq}Hz";
+        }
 
+        private void updateLiveFrequency()
+        {
+            double liveFreq = Math.Round(1 / (((double) showLiveDelay) / 1000), 2);
+            lliveFreqToolstrip.Text = $"Live: {liveFreq}Hz";
         }
     }
 }
