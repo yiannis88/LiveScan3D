@@ -311,7 +311,9 @@ namespace KinectServer
                     //TODO add local frames to UE
                     if (oTransferServer.UesCurrentlyConnected())
                         // TODO get real source ID's
-                        oBufferAlgorithm.BufferedFrames(liveFrame.Vertices.ToList(), liveFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 1);
+                        oBufferAlgorithm.BufferedFrames(
+                            Transformer.Apply3DTransform(liveFrame.Vertices.ToList(), Transformer.GetYRotationTransform(180)), 
+                            liveFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 1);
                             
                     if (LocalFrames.Count > 0)
                     {
@@ -321,7 +323,9 @@ namespace KinectServer
                         //TODO add local frames to UE
                         if (oTransferServer.UesCurrentlyConnected())
                             // TODO get real source ID's
-                            oBufferAlgorithm.BufferedFrames(localFrame.Vertices.ToList(), localFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 2);
+                            oBufferAlgorithm.BufferedFrames(
+                                Transformer.Apply3DTransform(localFrame.Vertices.ToList(), Transformer.GetYRotationTransform(180)), 
+                                localFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 2);
 
                         frameCounter++;
                     }
