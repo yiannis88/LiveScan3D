@@ -72,6 +72,7 @@ private:
 	int* m_portPool;
 	int m_tcpConn;
 	double m_randomLosses;
+	int m_sourceID;
 
 	std::vector<Point3s> m_vLastFrameVertices;
 	std::vector<RGB> m_vLastFrameRGB;

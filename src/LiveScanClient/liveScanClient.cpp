@@ -95,6 +95,7 @@ LiveScanClient::LiveScanClient() :
 	m_iCompressionLevel(2),
 	m_pClientSocket(NULL),
 	m_tcpConn(1),
+	m_sourceID(1),
 	m_randomLosses (0.0),
 	m_nFilterNeighbors(10),
 	m_fFilterThreshold(0.01f),
@@ -521,6 +522,33 @@ LRESULT CALLBACK LiveScanClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 								SetStatusMessage(L"Failed to connect. Did you start the server?", 10000, true);
 							}
 						}
+
+						// set source ID
+						char sourceID[3];
+						GetDlgItemTextA(m_hWnd, IDC_EDIT_SOURCEID, sourceID, 3);
+						
+						// TODO check sourceID is digit
+						/*
+						ofstream myfile;
+						myfile.open("example.txt");
+						for (char num : sourceID) {
+							myfile << num << "\n";
+						}
+						myfile.close();
+
+						bool sourceIDisDigit = true;
+						for (char num : sourceID) {
+							if (!isdigit(num) && num != ' ')
+								sourceIDisDigit = false;
+						}
+
+						if (sourceIDisDigit)
+							m_sourceID = std::max(std::min(std::atoi(sourceID), 254), 0);
+						else
+							m_sourceID = 1;
+						*/
+
+						m_sourceID = std::max(std::min(std::atoi(sourceID), 254), 0);
 
 						//get the random losses (m_randomLosses)		
 						char frameLosses[10];
@@ -1172,7 +1200,7 @@ LiveScanClient::CreateFramesReadyForTransmission(vector<Point3s> vertices, vecto
 	int pos = 0;
 
 	// SOURCEID
-	char sourceID = (char) 32;
+	char sourceID = (char) m_sourceID;
 	memcpy(buffer.data() + pos, &sourceID, sizeof(sourceID));
 	pos += sizeof(sourceID);
 
