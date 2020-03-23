@@ -95,6 +95,7 @@ LiveScanClient::LiveScanClient() :
 	m_iCompressionLevel(2),
 	m_pClientSocket(NULL),
 	m_tcpConn(1),
+	m_sourceID(1),
 	m_randomLosses (0.0),
 	m_nFilterNeighbors(10),
 	m_fFilterThreshold(0.01f),
@@ -521,6 +522,33 @@ LRESULT CALLBACK LiveScanClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 								SetStatusMessage(L"Failed to connect. Did you start the server?", 10000, true);
 							}
 						}
+
+						// set source ID
+						char sourceID[3];
+						GetDlgItemTextA(m_hWnd, IDC_EDIT_SOURCEID, sourceID, 3);
+						
+						// TODO check sourceID is digit
+						/*
+						ofstream myfile;
+						myfile.open("example.txt");
+						for (char num : sourceID) {
+							myfile << num << "\n";
+						}
+						myfile.close();
+
+						bool sourceIDisDigit = true;
+						for (char num : sourceID) {
+							if (!isdigit(num) && num != ' ')
+								sourceIDisDigit = false;
+						}
+
+						if (sourceIDisDigit)
+							m_sourceID = std::max(std::min(std::atoi(sourceID), 254), 0);
+						else
+							m_sourceID = 1;
+						*/
+
+						m_sourceID = std::max(std::min(std::atoi(sourceID), 254), 0);
 
 						//get the random losses (m_randomLosses)		
 						char frameLosses[10];
@@ -1164,12 +1192,19 @@ void
 LiveScanClient::CreateFramesReadyForTransmission(vector<Point3s> vertices, vector<RGB> RGB, vector<Body> body, vector<char>& finalVec, uint32_t& tsCreation)
 {
 	auto start = std::chrono::system_clock::now();
-	unsigned int size = (unsigned int)RGB.size() * (3 + 3 * sizeof(short)) + sizeof(int);
+	unsigned int size = sizeof(char) + sizeof(int) + (unsigned int)RGB.size() * (3 + 3 * sizeof(short));
+					//	sourceID		nVerts			RGB								Verts
 
 	vector<char> buffer(size);
 	char* ptr2 = (char*)vertices.data();
 	int pos = 0;
 
+	// SOURCEID
+	char sourceID = (char) m_sourceID;
+	memcpy(buffer.data() + pos, &sourceID, sizeof(sourceID));
+	pos += sizeof(sourceID);
+
+	// nVERTS
 	unsigned int nVertices = (unsigned int)RGB.size();
 	memcpy(buffer.data() + pos, &nVertices, sizeof(nVertices));
 	pos += sizeof(nVertices);

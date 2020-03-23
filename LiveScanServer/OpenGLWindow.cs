@@ -40,7 +40,7 @@ namespace KinectServer
         bool IsFullscreen = false;
 
         static float MOUSE_ORBIT_SPEED = 0.30f;     // 0 = SLOWEST, 1 = FASTEST
-        static float MOUSE_DOLLY_SPEED = 0.2f;     // same as above...but much more sensitive
+        static float MOUSE_DOLLY_SPEED = 0.1f;     // same as above...but much more sensitive
         static float MOUSE_TRACK_SPEED = 0.003f;    // same as above...but much more sensitive
 
         float g_heading;
@@ -391,7 +391,7 @@ namespace KinectServer
         {
             lock (clientFrames)
             {
-                clientFrames[frame.ClientID] = frame;
+                clientFrames[frame.SourceID] = frame;
             }
         }
 
@@ -489,7 +489,7 @@ namespace KinectServer
                                 clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, translation);
                                 */
                                 // get and apply transformation to correctly locate and orientate in space
-                                clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(clientFrame.ClientID));
+                                clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(clientFrame.SourceID));
 
                                 for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)
                                 {

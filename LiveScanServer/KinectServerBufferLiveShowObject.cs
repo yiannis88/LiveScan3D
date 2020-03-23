@@ -20,8 +20,9 @@ public class KinectServerBufferLiveShowObject
     public int DelayToEnqueueDisplay { get; set; }
     public int DeltaToEnqueueDisplay { get; set; }
     public int TotalBytesNoHdr { get; set; }
+    public int SourceID { get; set; }
 
-    public KinectServerBufferLiveShowObject(List<List<byte>> lFrameRGB, List<List<Single>> lFrameVerts, List<List<Body>> lBodies, int timestamp, int timestampEnqueued, int delayToEnqueueDisplay, int deltaToEnqueueDisplay, int totalBytesNoHdr)
+    public KinectServerBufferLiveShowObject(List<List<byte>> lFrameRGB, List<List<Single>> lFrameVerts, List<List<Body>> lBodies, int timestamp, int timestampEnqueued, int delayToEnqueueDisplay, int deltaToEnqueueDisplay, int totalBytesNoHdr, int sourceID)
     {
         LFrameRGBLs = lFrameRGB;
         LFrameVertsLs = lFrameVerts;
@@ -31,5 +32,6 @@ public class KinectServerBufferLiveShowObject
         DelayToEnqueueDisplay = delayToEnqueueDisplay;
         DeltaToEnqueueDisplay = deltaToEnqueueDisplay;
         TotalBytesNoHdr = totalBytesNoHdr;
+        SourceID = sourceID;
     }
 }

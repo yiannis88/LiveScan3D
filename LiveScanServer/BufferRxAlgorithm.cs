@@ -123,7 +123,7 @@ public class BufferRxAlgorithm
     }
 
     //this Enqueue function is used for the rx buffer (clients to server)
-    public void Enqueue(List<byte> lFrameRGBIn, List<Single> lFrameVertsIn, List<Body> lBodiesIn, int timestamp, int _totalBytes, int remPort, int locPort, int tsOffsetFromUtcTime)
+    public void Enqueue(List<byte> lFrameRGBIn, List<Single> lFrameVertsIn, List<Body> lBodiesIn, int timestamp, int _totalBytes, int remPort, int locPort, int tsOffsetFromUtcTime, int sourceID)
     {
         if (bufferedObjects.Count < MaxBufferSize)
         {
@@ -132,15 +132,16 @@ public class BufferRxAlgorithm
             int deltaLastEnq = (lastEnqueuedTs > 0) ? deltaCorrection(tsEnqueued - lastEnqueuedTs) : 0;
             lastEnqueuedTs = tsEnqueued;
 
-            bufferedObjects.Enqueue(new KinectServerBufferObject(lFrameRGBIn, lFrameVertsIn, lBodiesIn, timestamp, tsEnqueued, delta, deltaLastEnq, _totalBytes, remPort, locPort));
+            bufferedObjects.Enqueue(new KinectServerBufferObject(lFrameRGBIn, lFrameVertsIn, lBodiesIn, timestamp, tsEnqueued, delta, deltaLastEnq, _totalBytes, remPort, locPort, sourceID));
         }
     }
 
-    public (List<byte> lFrameRGBOut, List<Single> lFrameVertsOut, List<Body> lBodiesOut, int timeStampOut, int totalBytesOut) Dequeue(int syncTimestamp, int tsOffsetFromUtcTime, int rxBufferHoldPktsThreshold)
+    public (List<byte> lFrameRGBOut, List<Single> lFrameVertsOut, List<Body> lBodiesOut, int timeStampOut, int totalBytesOut, int sourceID) Dequeue(int syncTimestamp, int tsOffsetFromUtcTime, int rxBufferHoldPktsThreshold)
     {
         List <Single> lFrameVertsOut = new List<Single>();
         List<byte> lFrameRGBOut = new List<byte>();
         List<Body> lBodiesOut = new List<Body>();
+        int sourceID = 0;
         int timeStampOut = 0;
         int dequeuedTimeUtc = 0;
         int totalBytesOut = 0;
@@ -167,6 +168,7 @@ public class BufferRxAlgorithm
                     lFrameRGBOut = item.LFrameRGB; //return
                     lFrameVertsOut = item.LFrameVerts; //return
                     lBodiesOut = item.LBodies; //return
+                    sourceID = item.SourceID; //return
                     timeStampOut = item.Timestamp; //return
 
                     /* stats */
@@ -196,7 +198,7 @@ public class BufferRxAlgorithm
                 }
             }
         }
-        return (lFrameRGBOut, lFrameVertsOut, lBodiesOut, timeStampOut, totalBytesOut);
+        return (lFrameRGBOut, lFrameVertsOut, lBodiesOut, timeStampOut, totalBytesOut, sourceID);
     }
 
     public bool CheckStoredFrames(int rxBufferHoldPktsThreshold)

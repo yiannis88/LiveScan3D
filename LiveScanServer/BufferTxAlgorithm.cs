@@ -142,7 +142,7 @@ namespace KinectServer
             int size = (sizeof(short) * nVerticesToSend) + (sizeof(byte) * nVerticesToSend);
             int hdr_indicator = 1, hdr_source = 1, hdr_size = 4, hdr_compr = 4, hdr_ts = 4;
             int hdrSize = hdr_indicator + hdr_source + hdr_size + hdr_compr + hdr_ts; //1 byte for indicating the frame type, 1 byte for source ID, 4 bytes for size, 4 bytes for compression, and 4 bytes for timestamp (UTC)
-            int sizeBuffer = size + hdrSize;
+            int sizeBuffer = size + hdrSize; // whole packet size
             byte[] buffer = new byte[sizeBuffer];
             int compression = 0; //not really used
             try
