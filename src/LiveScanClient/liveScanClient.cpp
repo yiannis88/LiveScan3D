@@ -1164,12 +1164,19 @@ void
 LiveScanClient::CreateFramesReadyForTransmission(vector<Point3s> vertices, vector<RGB> RGB, vector<Body> body, vector<char>& finalVec, uint32_t& tsCreation)
 {
 	auto start = std::chrono::system_clock::now();
-	unsigned int size = (unsigned int)RGB.size() * (3 + 3 * sizeof(short)) + sizeof(int);
+	unsigned int size = sizeof(char) + sizeof(int) + (unsigned int)RGB.size() * (3 + 3 * sizeof(short));
+					//	sourceID		nVerts			RGB								Verts
 
 	vector<char> buffer(size);
 	char* ptr2 = (char*)vertices.data();
 	int pos = 0;
 
+	// SOURCEID
+	char sourceID = (char) 32;
+	memcpy(buffer.data() + pos, &sourceID, sizeof(sourceID));
+	pos += sizeof(sourceID);
+
+	// nVERTS
 	unsigned int nVertices = (unsigned int)RGB.size();
 	memcpy(buffer.data() + pos, &nVertices, sizeof(nVertices));
 	pos += sizeof(nVertices);

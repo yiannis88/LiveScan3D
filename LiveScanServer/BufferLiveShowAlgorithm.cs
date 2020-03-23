@@ -104,7 +104,7 @@ namespace BufferLiveShowAlgorithm
             }
         }
 
-        public void Enqueue(List<List<byte>> lFrameRGBIn, List<List<float>> lFrameVertsIn, List<List<Body>> lBodiesIn, int minTs, int tsOffsetFromUtcTime, int rxBufferHoldPktsThreshold, int totalSizeNoHdr)
+        public void Enqueue(List<List<byte>> lFrameRGBIn, List<List<float>> lFrameVertsIn, List<List<Body>> lBodiesIn, int minTs, int tsOffsetFromUtcTime, int rxBufferHoldPktsThreshold, int totalSizeNoHdr, int sourceID)
         {
             if (lastEnqueuedTs > 0 && bufferedObjects.Count >= rxBufferHoldPktsThreshold)
                 deqAllowed = true;
@@ -115,15 +115,16 @@ namespace BufferLiveShowAlgorithm
                 int _deltaCreationTs = deltaCorrection(_enqueuedTs - minTs);
                 int _deltaLastEnq = (lastEnqueuedTs > 0) ? deltaCorrection(_enqueuedTs - lastEnqueuedTs) : 0;
                 lastEnqueuedTs = _enqueuedTs;
-                bufferedObjects.Enqueue(new KinectServerBufferLiveShowObject(lFrameRGBIn, lFrameVertsIn, lBodiesIn, minTs, _enqueuedTs, _deltaCreationTs, _deltaLastEnq, totalSizeNoHdr));                
+                bufferedObjects.Enqueue(new KinectServerBufferLiveShowObject(lFrameRGBIn, lFrameVertsIn, lBodiesIn, minTs, _enqueuedTs, _deltaCreationTs, _deltaLastEnq, totalSizeNoHdr, sourceID));                
             }
         }
 
-        public (List<List<byte>> lFrameRGBOut, List<List<float>> lFrameVertsOut, List<List<Body>> lBodiesOut, int _outMinTimestamp) Dequeue(int tsOffsetFromUtcTime)
+        public (List<List<byte>> lFrameRGBOut, List<List<float>> lFrameVertsOut, List<List<Body>> lBodiesOut, int _outMinTimestamp, int sourceID) Dequeue(int tsOffsetFromUtcTime)
         {
             List<List<float>> lFrameVertsOut = new List<List<float>>();
             List<List<byte>> lFrameRGBOut = new List<List<byte>>();
             List<List<Body>> lBodiesOut = new List<List<Body>>();
+            int sourceID = 0;
             int _outMinTimestamp = 0;
 
             if (deqAllowed)
@@ -139,6 +140,7 @@ namespace BufferLiveShowAlgorithm
                             lFrameVertsOut = item.LFrameVertsLs; //return
                             lFrameRGBOut = item.LFrameRGBLs; //return
                             lBodiesOut = item.LBodiesLs; //return
+                            sourceID = item.SourceID; //return
                             _outMinTimestamp = item.Timestamp; //return    
 
                             /* stats */
@@ -162,7 +164,7 @@ namespace BufferLiveShowAlgorithm
                 }
             }
 
-            return (lFrameRGBOut, lFrameVertsOut, lBodiesOut, _outMinTimestamp);
+            return (lFrameRGBOut, lFrameVertsOut, lBodiesOut, _outMinTimestamp, sourceID);
         }
 
         private void BufferStats()

@@ -694,6 +694,7 @@ namespace KinectServer
                 List<List<byte>> lFramesRGB = new List<List<byte>>();
                 List<List<float>> lFramesVerts = new List<List<float>>();
                 List<List<Body>> lFramesBody = new List<List<Body>>();
+                int sourceID = 0; // should this be initialised to an unused ID? for error checking?
                 int minTs = int.MaxValue;
                 int totalSizeNoHdr = 0;
 
@@ -710,7 +711,10 @@ namespace KinectServer
                     {
                         try
                         {
-                            var (lFrameRGBOut, lFrameVertsOut, lBodiesOut, timestampOut, totalBytesOut) = _csInfo.lSocketsInfo[0].LClientSocket.CheckRxBufferStatus(syncTimestamp, localOffsetTs, rxBufferHoldPktsThreshold);
+                            var (lFrameRGBOut, lFrameVertsOut, lBodiesOut, timestampOut, totalBytesOut, _sourceID) = _csInfo.lSocketsInfo[0].LClientSocket.CheckRxBufferStatus(syncTimestamp, localOffsetTs, rxBufferHoldPktsThreshold);
+                            
+                            sourceID = _sourceID; // should this be moved to lFrameRGBOut if statement?
+                            
                             if (!refTsFlag && timestampOut > 0)
                             {
                                 syncTimestamp = timestampOut;
@@ -735,7 +739,7 @@ namespace KinectServer
 
                 if (lFramesRGB.Count > 0)
                 {
-                    oLiveShowBuffer.Enqueue(lFramesRGB, lFramesVerts, lFramesBody, minTs, localOffsetTs, rxBufferHoldPktsThreshold, totalSizeNoHdr);
+                    oLiveShowBuffer.Enqueue(lFramesRGB, lFramesVerts, lFramesBody, minTs, localOffsetTs, rxBufferHoldPktsThreshold, totalSizeNoHdr, sourceID);
                 }
 
                 stopWatch.Stop();

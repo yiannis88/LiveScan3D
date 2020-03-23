@@ -302,10 +302,10 @@ namespace KinectServer
             {
                 Thread.Sleep(showLiveDelay);
                 int _tsOffsetFromUtcTime = oServer.localOffsetTs;
-                var (lFramesRGB, lFramesVerts, lFramesBody, _outMinTimestamp) = oBufferLiveShowAlgorithm.Dequeue(_tsOffsetFromUtcTime);
+                var (lFramesRGB, lFramesVerts, lFramesBody, _outMinTimestamp, _sourceID) = oBufferLiveShowAlgorithm.Dequeue(_tsOffsetFromUtcTime);
                 if (lFramesRGB.Count > 0)
                 {
-                    var liveFrame = new Frame(new List<Single>(), new List<byte>(), new List<Body>(), 0);
+                    var liveFrame = new Frame(new List<Single>(), new List<byte>(), new List<Body>(), _sourceID);
                     for (int i = 0; i < lFramesRGB.Count; i++)
                     {
                         liveFrame.Vertices.AddRange(lFramesVerts[i]);
@@ -318,9 +318,14 @@ namespace KinectServer
                     if (oTransferServer.UesCurrentlyConnected())
                         // TODO get real source ID's
                         oBufferAlgorithm.BufferedFrames(
-                            Transformer.Apply3DTransform(liveFrame.Vertices.ToList(), Transformer.GetYRotationTransform(180)), 
-                            liveFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 1);
+                                Transformer.Apply3DTransform(liveFrame.Vertices.ToList(), Transformer.GetYRotationTransform(180)), 
+                                liveFrame.RGB.ToList(), 
+                                _outMinTimestamp, 
+                                _tsOffsetFromUtcTime, 
+                                _sourceID
+                            );
                             
+                    // LOCAL FRAMES FOR DEBUGGING
                     if (LocalFrames.Count > 0)
                     {
                         var localFrame = LocalFrames[frameCounter % LocalFrames.Count];
@@ -330,12 +335,17 @@ namespace KinectServer
                         if (oTransferServer.UesCurrentlyConnected())
                             // TODO get real source ID's
                             oBufferAlgorithm.BufferedFrames(
-                                Transformer.Apply3DTransform(localFrame.Vertices.ToList(), Transformer.GetYRotationTransform(180)), 
-                                localFrame.RGB.ToList(), _outMinTimestamp, _tsOffsetFromUtcTime, 2);
+                                    Transformer.Apply3DTransform(localFrame.Vertices.ToList(), Transformer.GetYRotationTransform(180)), 
+                                    localFrame.RGB.ToList(), 
+                                    _outMinTimestamp, 
+                                    _tsOffsetFromUtcTime, 
+                                    100 // dummy source ID
+                                );
 
                         frameCounter++;
                     }
-                                           
+                    // LOCAL FRAMES FOR END DEBUGGING
+
                     //Note the fact that a new frame was downloaded, this is used to estimate the FPS.
                     if (oOpenGLWindow != null && lFramesRGB.Count > 0)
                     {
@@ -389,7 +399,7 @@ namespace KinectServer
             }
 
             //Download a frame from each client.
-            var (lAllFrameColors, lAllFrameVertices, lAllFrameBody, _outMinTimestamp) = oBufferLiveShowAlgorithm.Dequeue(oServer.localOffsetTs);
+            var (lAllFrameColors, lAllFrameVertices, lAllFrameBody, _outMinTimestamp, _sourceID) = oBufferLiveShowAlgorithm.Dequeue(oServer.localOffsetTs);
 
             //Initialize containers for the poses.
             List<float[]> Rs = new List<float[]>();

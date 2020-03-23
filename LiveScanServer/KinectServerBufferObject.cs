@@ -23,8 +23,9 @@ public class KinectServerBufferObject
     public int TotalBytes { get; set; }
     public int LocalPort { get; set; }
     public int RemotePort { get; set; }
+    public int SourceID { get; set; }
 
-    public KinectServerBufferObject(List<byte> lFrameRGB, List<Single> lFrameVerts, List<Body> lBodies, int timestamp, int timestampEnqueued, int delayToEnqueue, int deltaToEnqueue, int totalBytes, int remPort, int locPort)
+    public KinectServerBufferObject(List<byte> lFrameRGB, List<Single> lFrameVerts, List<Body> lBodies, int timestamp, int timestampEnqueued, int delayToEnqueue, int deltaToEnqueue, int totalBytes, int remPort, int locPort, int sourceID)
     {
         LFrameRGB = lFrameRGB;
         LFrameVerts = lFrameVerts;
@@ -36,5 +37,6 @@ public class KinectServerBufferObject
         TotalBytes = totalBytes;
         LocalPort = locPort;
         RemotePort = remPort;
+        SourceID = sourceID;
     }
 }

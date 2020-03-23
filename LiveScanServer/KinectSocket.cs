@@ -290,6 +290,9 @@ namespace KinectServer
                     //Receive depth and color data
                     int startIdx = 0;
 
+                    int sourceID = buffer[startIdx];
+                    startIdx += 1;
+
                     int n_vertices = BitConverter.ToInt32(buffer, startIdx);
                     startIdx += 4;
                     //In total, we have 9 bytes per cloud point; with 3 bytes used for the color and 6 used for the position
@@ -355,7 +358,7 @@ namespace KinectServer
                     //here we need to queue packets 
                     if (_lFrameRGB.Count > 0)
                     {
-                        oBufferRxAlgorithm.Enqueue(_lFrameRGB, _lFrameVerts, _lBodies, timestamp, _dataLength, remotePort, localPort, tsOffsetFromUtcTime);
+                        oBufferRxAlgorithm.Enqueue(_lFrameRGB, _lFrameVerts, _lBodies, timestamp, _dataLength, remotePort, localPort, tsOffsetFromUtcTime, sourceID);
                     }
                 }
             }
@@ -445,22 +448,24 @@ namespace KinectServer
             eChanged?.Invoke();
         }
 
-        public (List<byte> lFrameRGBOut, List<Single> lFrameVertsOut, List<Body> lBodiesOut, int timestampOut, int totalBytesOut) CheckRxBufferStatus(int syncTimestamp, int tsOffsetFromUtcTime, int rxBufferHoldPktsThreshold)
+        public (List<byte> lFrameRGBOut, List<Single> lFrameVertsOut, List<Body> lBodiesOut, int timestampOut, int totalBytesOut, int sourceID) CheckRxBufferStatus(int syncTimestamp, int tsOffsetFromUtcTime, int rxBufferHoldPktsThreshold)
         {
             List <Single> lFrameVertsOut = new List<Single>();
             List<byte> lFrameRGBOut = new List<byte>();
             List<Body> lBodiesOut = new List<Body>();
+            int sourceID = 0;
             int timestampOut = 0;
             int totalBytesOut = 0;
 
-            var (_lFrameRGBOut, _lFrameVertsOut, _lBodiesOut, _timestampOut, _totalBytesOut) = oBufferRxAlgorithm.Dequeue(syncTimestamp, tsOffsetFromUtcTime, rxBufferHoldPktsThreshold);
+            var (_lFrameRGBOut, _lFrameVertsOut, _lBodiesOut, _timestampOut, _totalBytesOut, _sourceID) = oBufferRxAlgorithm.Dequeue(syncTimestamp, tsOffsetFromUtcTime, rxBufferHoldPktsThreshold);
             lFrameVertsOut = _lFrameVertsOut;
             lFrameRGBOut = _lFrameRGBOut;
             lBodiesOut = _lBodiesOut;
+            sourceID = _sourceID;
             timestampOut = _timestampOut;
             totalBytesOut = _totalBytesOut;
 
-            return (lFrameRGBOut, lFrameVertsOut, lBodiesOut, timestampOut, totalBytesOut);
+            return (lFrameRGBOut, lFrameVertsOut, lBodiesOut, timestampOut, totalBytesOut, sourceID);
         }
 
         public void CheckIfRequestFrameIsRequired(int rxBufferHoldPktsThreshold)
