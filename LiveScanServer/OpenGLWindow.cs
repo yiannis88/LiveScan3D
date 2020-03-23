@@ -56,7 +56,7 @@ namespace KinectServer
         float[] targetPosition = new float[3];
 
         // live storage of frames indexed by client ID
-        public ConcurrentDictionary<int, Frame> clientFrames = new ConcurrentDictionary<int, Frame>();
+        ConcurrentDictionary<int, Frame> sourceFrames = new ConcurrentDictionary<int, Frame>();
         // client id of currently selected source for control, -1 = none
         public int SelectedFigure = -1;
         // object controlling placement of sources, used for retrieving transformations before display
@@ -105,7 +105,13 @@ namespace KinectServer
             targetPosition[2] = 0;
 
             // share live client frames with transformer
-            transformer.ClientFrames = clientFrames;
+            transformer.setSourceFrameDict(sourceFrames);
+        }
+
+        public void setSourceFrameDict(ConcurrentDictionary<int, Frame> _sourceFrames)
+        {
+            sourceFrames = _sourceFrames;
+            transformer.setSourceFrameDict(_sourceFrames);
         }
 
         public void CloudUpdateTick()
@@ -184,7 +190,7 @@ namespace KinectServer
 
             if (keyboard[Key.R])
                 if (keyboard[Key.ShiftLeft])
-                    transformer.ResetAllClients();
+                    transformer.ResetAllSources();
                 else
                     ResetFigure();
 
@@ -194,25 +200,33 @@ namespace KinectServer
                 AddRotation(0, -10, 0);
         }
 
+        private List<int> SourceIDs
+        {
+            get
+            {
+                return new List<int>(sourceFrames.Keys);
+            }
+        }
+
         // SOURCE POSITION/ROTATION CONTROLS
 
         protected void SelectNextFigure()
         {
-            if (clientFrames.Count > 0)
+            var keys = SourceIDs;
+            if (keys.Count > 0)
             {
                 if (SelectedFigure == -1)
                 {
-                    var enumerator = clientFrames.Keys.GetEnumerator();
+                    var enumerator = SourceIDs.GetEnumerator();
                     enumerator.MoveNext();
                     SelectedFigure = enumerator.Current;
                 }
                 else
                 {
-                    if (clientFrames.Count > 1)
+                    if (keys.Count > 1)
                     {
-                        var ClientIDs = new List<int>(clientFrames.Keys);
-                        var keyIndex = ClientIDs.FindIndex(x => x == SelectedFigure);
-                        SelectedFigure = ClientIDs[(keyIndex + 1) % ClientIDs.Count];
+                        var keyIndex = SourceIDs.FindIndex(x => x == SelectedFigure);
+                        SelectedFigure = SourceIDs[(keyIndex + 1) % SourceIDs.Count];
                     }
                 }
             }
@@ -224,17 +238,17 @@ namespace KinectServer
         protected void AddRotation(float x, float y, float z)
         {
             if (SelectedFigure != -1)
-                transformer.RotateClient(SelectedFigure, x, y, z);
+                transformer.RotateSource(SelectedFigure, x, y, z);
         }
         protected void AddTranslation(float x, float y, float z)
         {
             if (SelectedFigure != -1)
-                transformer.TranslateClient(SelectedFigure, x, y, z);
+                transformer.TranslateSource(SelectedFigure, x, y, z);
         }
         protected void ResetFigure()
         {
             if (SelectedFigure != -1)
-                transformer.ResetClient(SelectedFigure);
+                transformer.ResetSource(SelectedFigure);
         }
 
         // END CONTROLS
@@ -389,25 +403,19 @@ namespace KinectServer
         // used by main window to supply display with live frames
         public void AddClientFrame(Frame frame)
         {
-            lock (clientFrames)
-            {
-                clientFrames[frame.SourceID] = frame;
-            }
+            sourceFrames[frame.SourceID] = frame;
         }
 
         private int FramePointCount
         {
             get
             {
-                lock (clientFrames)
+                int count = 0;
+                foreach (Frame frame in sourceFrames.Values)
                 {
-                    int count = 0;
-                    foreach (Frame frame in clientFrames.Values)
-                    {
-                        count += frame.Vertices.Count / 3;
-                    }
-                    return count;
+                    count += frame.Vertices.Count / 3;
                 }
+                return count;
             }
         }
 
@@ -415,32 +423,18 @@ namespace KinectServer
         {
             get
             {
-                lock (clientFrames)
+                int count = 0;
+                foreach (Frame frame in sourceFrames.Values)
                 {
-                    int count = 0;
-                    foreach (Frame frame in clientFrames.Values)
-                    {
-                        count += frame.Bodies.Count;
-                    }
-                    return count;
+                    count += frame.Bodies.Count;
                 }
-            }
-        }
-
-        private int ClientCount
-        {
-            get
-            {
-                lock (clientFrames)
-                {
-                    return clientFrames.Count;
-                }
+                return count;
             }
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
-            if (clientFrames.Count > 0)
+            if (sourceFrames.Count > 0)
             {
                 if ((DateTime.Now - tFPSUpdateTimer).Seconds >= 1)
                 {
@@ -450,84 +444,80 @@ namespace KinectServer
                     tFPSUpdateTimer = DateTime.Now;
                     nTickCounter = 0;
                 }
-
-
-                lock (clientFrames)
+                try
                 {
-                    try
+                    lock (settings)
                     {
-                        lock (settings)
+                        bool bShowSkeletons = settings.bShowSkeletons;
+
+                        var clientCount = sourceFrames.Count;
+                        PointCount = FramePointCount;
+                        LineCount = 0;
+                        if (bDrawMarkings)
                         {
-                            bool bShowSkeletons = settings.bShowSkeletons;
-
-                            var clientCount = ClientCount;
-                            PointCount = FramePointCount;
-                            LineCount = 0;
-                            if (bDrawMarkings)
-                            {
-                                //bounding box
-                                LineCount += 12 * clientCount;
-                                //markers
-                                LineCount += settings.lMarkerPoses.Count * 3;
-                                //cameras
-                                LineCount += cameraPoses.Count * 3;
-                                if (bShowSkeletons)
-                                    LineCount += 24 * FrameBodyCount;
-                            }
-
-                            VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
-
-                            int lastFrameCount = 0;
-                            // iterate through connected sources last frames
-                            foreach (int clientNumber in clientFrames.Keys)
-                            {
-                                var clientFrame = clientFrames[clientNumber];
-                                /*
-                                clientFrame.Vertices = Transformer.NormaliseAroundMean(clientFrame.Vertices);
-                                var translation = new AffineTransform();
-                                translation.t = new float[] { 2, 0, 0 };
-                                clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, translation);
-                                */
-                                // get and apply transformation to correctly locate and orientate in space
-                                clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetClientTransform(clientFrame.SourceID));
-
-                                for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)
-                                {
-                                    var j = i + lastFrameCount;
-                                    VBO[j].R = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3] + brightnessModifier)));
-                                    VBO[j].G = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 1] + brightnessModifier)));
-                                    VBO[j].B = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 2] + brightnessModifier)));
-                                    VBO[j].A = 255;
-                                    VBO[j].Position.X = clientFrame.Vertices[i * 3];
-                                    VBO[j].Position.Y = clientFrame.Vertices[i * 3 + 1];
-                                    VBO[j].Position.Z = clientFrame.Vertices[i * 3 + 2];
-                                }
-                                lastFrameCount += clientFrame.Vertices.Count / 3;
-                            }
-
-                            if (bDrawMarkings)
-                            {
-                                int iCurLineCount = 0;
-                                iCurLineCount += AddBoundingBox(PointCount + 2 * iCurLineCount);
-                                for (int i = 0; i < settings.lMarkerPoses.Count; i++)
-                                {
-                                    iCurLineCount += AddMarker(PointCount + 2 * iCurLineCount, settings.lMarkerPoses[i].pose);
-                                }
-                                for (int i = 0; i < cameraPoses.Count; i++)
-                                {
-                                    iCurLineCount += AddCamera(PointCount + 2 * iCurLineCount, cameraPoses[i]);
-                                }
-                                if (bShowSkeletons)
-                                    iCurLineCount += AddBodies(PointCount + 2 * iCurLineCount);
-                            }
-
+                            //bounding box
+                            LineCount += 12 * clientCount;
+                            //markers
+                            LineCount += settings.lMarkerPoses.Count * 3;
+                            //cameras
+                            LineCount += cameraPoses.Count * 3;
+                            if (bShowSkeletons)
+                                LineCount += 24 * FrameBodyCount;
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.ToString());
+
+                        VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
+
+                        int lastFrameCount = 0;
+                        // iterate through connected sources last frames
+                        foreach (int sourceID in SourceIDs)
+                        {
+                            var clientFrame = sourceFrames[sourceID];
+                            /*
+                            clientFrame.Vertices = Transformer.NormaliseAroundMean(clientFrame.Vertices);
+                            var translation = new AffineTransform();
+                            translation.t = new float[] { 2, 0, 0 };
+                            clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, translation);
+                            */
+                            // get and apply transformation to correctly locate and orientate in space
+                            clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetSourceTransform(clientFrame.SourceID));
+
+                            for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)
+                            {
+                                var j = i + lastFrameCount;
+                                VBO[j].R = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3] + brightnessModifier)));
+                                VBO[j].G = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 1] + brightnessModifier)));
+                                VBO[j].B = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 2] + brightnessModifier)));
+                                VBO[j].A = 255;
+                                VBO[j].Position.X = clientFrame.Vertices[i * 3];
+                                VBO[j].Position.Y = clientFrame.Vertices[i * 3 + 1];
+                                VBO[j].Position.Z = clientFrame.Vertices[i * 3 + 2];
+                            }
+                            lastFrameCount += clientFrame.Vertices.Count / 3;
+                        }
+
+                        if (bDrawMarkings)
+                        {
+                            int iCurLineCount = 0;
+                            iCurLineCount += AddBoundingBox(PointCount + 2 * iCurLineCount);
+                            for (int i = 0; i < settings.lMarkerPoses.Count; i++)
+                            {
+                                iCurLineCount += AddMarker(PointCount + 2 * iCurLineCount, settings.lMarkerPoses[i].pose);
+                            }
+                            for (int i = 0; i < cameraPoses.Count; i++)
+                            {
+                                iCurLineCount += AddCamera(PointCount + 2 * iCurLineCount, cameraPoses[i]);
+                            }
+                            if (bShowSkeletons)
+                                iCurLineCount += AddBodies(PointCount + 2 * iCurLineCount);
+                        }
+
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+                
             }
         }
 

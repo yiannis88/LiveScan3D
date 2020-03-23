@@ -98,6 +98,15 @@ namespace KinectServer
 
         MainWindowForm oMainWindowForm;
 
+        private double bandwidth;
+        public double Bandwidth
+        {
+            get
+            {
+                return bandwidth;
+            }
+        }
+
         /**
          * This function is called in MainWindowForm::btRecord_Click () where at least one
          * client needs to be connected to tstart recording and in the MainWindowForm::btRefineCalib_Click()
@@ -423,6 +432,7 @@ namespace KinectServer
                 ipAddressBufferMap.Clear();
                 foreach (Socket socket in oServerSocket)
                     socket.Close();
+                //oServerSocket.Clear();
                 SocketListChanged();
             }
         }
@@ -867,6 +877,7 @@ namespace KinectServer
 
                 if (!_flagEarly)
                 {
+                    bandwidth = totalMbps;
                     double _totalFps = Math.Round(GetFps(totalFrames), 2);
                     double _displayedFps = Math.Round(GetFps(oMainWindowForm.GetDisplayedFrameCounter()), 2);
                     result += _totalFps + "\t" + _displayedFps + "\t" + totalMbps + "\t" + DateTime.Now.ToString("hh.mm.ss.fff") + "\t" + localOffsetTs;

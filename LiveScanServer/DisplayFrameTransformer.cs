@@ -22,38 +22,34 @@ using System.Collections.Generic;
 
 namespace KinectServer
 {
-    // ClientID === clientNumber
     public class DisplayFrameTransformer{
 
         public DisplayFrameTransformer(){}
-        public DisplayFrameTransformer(ConcurrentDictionary<int, Frame> clientFrames){
-            ClientFrames = clientFrames;
+        public DisplayFrameTransformer(ConcurrentDictionary<int, Frame> sourceFrames){
+            this.sourceFrames = sourceFrames;
         }
 
         // shared variable with OpenGL window containing live client frames indexed by clientNumber 
-        public ConcurrentDictionary<int, Frame> ClientFrames { get; set; }
+        private ConcurrentDictionary<int, Frame> sourceFrames { get; set; }
         // also indexed by clientNumber
-        private Dictionary<int, ClientPosition> ClientOverrides = new Dictionary<int, ClientPosition>();
+        private Dictionary<int, SourcePosition> SourceOverrides = new Dictionary<int, SourcePosition>();
 
-        public int ClientCount { get { return ClientFrames.Count; } }
-        public List<int> ClientIDs { get { return new List<int>(ClientFrames.Keys); } }
+        public void setSourceFrameDict(ConcurrentDictionary<int, Frame> _sourceFrames)
+        {
+            sourceFrames = _sourceFrames;
+        }
 
         // degrees about origin for arbitrary client number, defines DEFAULT BEHAVIOUR prior to override
         private float GetDefaultRotationDegrees(int sourceID)
         {
-            var list = new List<int>(ClientFrames.Keys);
+            var list = new List<int>(sourceFrames.Keys);
             list.Sort();
 
-            return ((float)list.IndexOf(sourceID) / (float)ClientCount) * 360;
+            return (list.IndexOf(sourceID) / sourceFrames.Count) * 360;
         }
 
         // generate rotation transformation for arbitrary client using default rotation DEFAULT BEHAVIOUR
         public AffineTransform GetRotationMatrix(int sourceID){
-            /*
-            if (sourceID >= ClientCount)
-            {
-                throw new IndexOutOfRangeException($"{sourceID} greater than client count of {ClientCount}");
-            }*/
             if (sourceID < 0)
             {
                 throw new IndexOutOfRangeException($"{sourceID} less than 0");
@@ -63,19 +59,19 @@ namespace KinectServer
         }
 
         // get display ready transform for given client, generates either DEFAULT or OVERRIDE transform matrix
-        public AffineTransform GetClientTransform(int sourceID)
+        public AffineTransform GetSourceTransform(int sourceID)
         {
-            if (!ClientFrames.ContainsKey(sourceID)) {
+            if (!sourceFrames.ContainsKey(sourceID)) {
                 throw new IndexOutOfRangeException($"client {sourceID} not found in frame storage");
             }
 
-            if (!ClientOverrides.ContainsKey(sourceID))
+            if (!SourceOverrides.ContainsKey(sourceID))
             {
                 return GetRotationMatrix(sourceID);
             }
             else
             {
-                var clientOverride = ClientOverrides[sourceID];
+                var clientOverride = SourceOverrides[sourceID];
                 var transform = Transformer.GetYRotationTransform(clientOverride.rotationY);
                 transform.t = new float[] { clientOverride.positionX, clientOverride.positionY, clientOverride.positionZ };
                 return transform;
@@ -83,16 +79,16 @@ namespace KinectServer
         }
 
         // used during OVERRIDE update
-        private ClientPosition GetOverride(int sourceID)
+        private SourcePosition GetOverride(int sourceID)
         {
-            if (!ClientOverrides.ContainsKey(sourceID))
+            if (!SourceOverrides.ContainsKey(sourceID))
             {
-                ClientOverrides[sourceID] = new ClientPosition(sourceID, 0, GetDefaultRotationDegrees(sourceID), 0, 0, 0, 0);
+                SourceOverrides[sourceID] = new SourcePosition(sourceID, 0, GetDefaultRotationDegrees(sourceID), 0, 0, 0, 0);
             }
-            return ClientOverrides[sourceID];
+            return SourceOverrides[sourceID];
         }
 
-        public void RotateClient(int sourceID, float x, float y, float z)
+        public void RotateSource(int sourceID, float x, float y, float z)
         {
             var tran = GetOverride(sourceID);
             tran.rotationX += x;
@@ -100,7 +96,7 @@ namespace KinectServer
             tran.rotationZ += z;
         }
 
-        public void TranslateClient(int sourceID, float x, float y, float z)
+        public void TranslateSource(int sourceID, float x, float y, float z)
         {
             var clientOverride = GetOverride(sourceID);
             clientOverride.positionX += x;
@@ -108,20 +104,20 @@ namespace KinectServer
             clientOverride.positionZ += z;
         }
 
-        public void ResetClient(int sourceID)
+        public void ResetSource(int sourceID)
         {
-            ClientOverrides.Remove(sourceID);
+            SourceOverrides.Remove(sourceID);
         }
 
-        public void ResetAllClients()
+        public void ResetAllSources()
         {
-            ClientOverrides.Clear();
+            SourceOverrides.Clear();
         }
 
     }
 
 // Position and rotation of source in 3D, used to define a source override
-    public class ClientPosition
+    public class SourcePosition
     {
         public int SourceID;
         public float rotationX;
@@ -132,7 +128,7 @@ namespace KinectServer
         public float positionY;
         public float positionZ;
 
-        public ClientPosition(int sourceID)
+        public SourcePosition(int sourceID)
         {
             this.SourceID = sourceID;
 
@@ -145,7 +141,7 @@ namespace KinectServer
             positionZ = 0;
         }
 
-        public ClientPosition(int sourceID, float rotationX, float rotationY, float rotationZ, float positionX, float positionY, float positionZ)
+        public SourcePosition(int sourceID, float rotationX, float rotationY, float rotationZ, float positionX, float positionY, float positionZ)
         {
             this.SourceID = sourceID;
             this.rotationX = rotationX;

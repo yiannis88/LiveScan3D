@@ -17,6 +17,7 @@
 //  Comments or modifications (major) are made by Ioannis Selinis (5GIC University of Surrey, 2019)
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -69,7 +70,7 @@ namespace KinectServer
         KinectSettings oSettings = new KinectSettings();
         //The live view window class
         OpenGLWindow oOpenGLWindow;
-
+        ConcurrentDictionary<int, Frame> sourceFrames = new ConcurrentDictionary<int, Frame>();
         List<Frame> LocalFrames = new List<Frame>();
 
         public MainWindowForm()
@@ -90,8 +91,10 @@ namespace KinectServer
             oServer = new KinectServer(oSettings);
             oServer.eSocketListChanged += new SocketListChangedHandler(UpdateListView);
             oTransferServer = new TransferServer();
+
             oBufferAlgorithm = new BufferTxAlgorithm();
             oBufferLiveShowAlgorithm = new BufferLiveShowAlgorithm.BufferLiveShowAlgorithm();
+
             oTransferServer.SetBufferClass(oBufferAlgorithm);
             oServer.SetLiveShowBuffer(oBufferLiveShowAlgorithm);
             oServer.SetMainWindowForm(this);
@@ -134,11 +137,12 @@ namespace KinectServer
                 btStart.Text = "Stop server";
                 TCPPicker.Enabled = false;
                 ueTCPPicker.Enabled = false;
+                btShowLive.Enabled = true;
 
                 if (!updateWorker.IsBusy)
                     updateWorker.RunWorkerAsync();
-                if (!bufferStats.IsBusy)
-                    bufferStats.RunWorkerAsync();
+                if (!statsWorker.IsBusy)
+                    statsWorker.RunWorkerAsync();
 
                 // FOR TESTING ONLY
                 frameCounter = 0;
@@ -152,9 +156,10 @@ namespace KinectServer
                 btStart.Text = "Start server";
                 TCPPicker.Enabled = true;
                 ueTCPPicker.Enabled = true;
+                btShowLive.Enabled = false;
 
                 updateWorker.CancelAsync();
-                bufferStats.CancelAsync();
+                statsWorker.CancelAsync();
 
                 LocalFrames = new List<Frame>();
             }
@@ -211,6 +216,7 @@ namespace KinectServer
 
             bLiveViewRunning = true;
             oOpenGLWindow = new OpenGLWindow();
+            oOpenGLWindow.setSourceFrameDict(sourceFrames);
             oOpenGLWindow.Run();
         }
 
@@ -313,6 +319,8 @@ namespace KinectServer
                         liveFrame.Bodies.AddRange(lFramesBody[i]);
                     }
                     lAllCameraPoses.AddRange(oServer.lCameraPoses);
+
+                    sourceFrames[liveFrame.SourceID] = liveFrame;
                     
                     //TODO add local frames to UE
                     if (oTransferServer.UesCurrentlyConnected())
@@ -349,7 +357,7 @@ namespace KinectServer
                     //Note the fact that a new frame was downloaded, this is used to estimate the FPS.
                     if (oOpenGLWindow != null && lFramesRGB.Count > 0)
                     {
-                        oOpenGLWindow.AddClientFrame(liveFrame);
+                        //oOpenGLWindow.AddClientFrame(liveFrame);
                         displayedFramesCtr++;
                         oOpenGLWindow.CloudUpdateTick();
                     }                        
@@ -693,26 +701,71 @@ namespace KinectServer
         private void bufferStats_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = (BackgroundWorker)sender;
-            lBufferToolstrip.Visible = true;
 
             while (bServerRunning && !worker.CancellationPending)
             {
-                Thread.Sleep(100);
-                lBufferToolstrip.Text = $"Live: {oBufferLiveShowAlgorithm.Count} Tx: {oBufferAlgorithm.Count} UEs: {oTransferServer.UesCurrentlyConnected()}";
+                Thread.Sleep(200);
+
+                rxBandwidthLabel.Invoke((MethodInvoker)delegate {
+                    rxBandwidthLabel.Text = $"{oServer.Bandwidth} MB/s";
+                });
+
+                liveBufferLabel.Invoke((MethodInvoker)delegate {
+                    liveBufferLabel.Text = oBufferLiveShowAlgorithm.Count.ToString();
+                });
+                txBufferLabel.Invoke((MethodInvoker)delegate {
+                    txBufferLabel.Text = oBufferAlgorithm.Count.ToString();
+                });
+
+                sourceTotalLabel.Invoke((MethodInvoker)delegate {
+                    sourceTotalLabel.Text = sourceFrames.Count.ToString();
+                });
+
+                var keys = new List<int>(sourceFrames.Keys);
+                keys.Sort();
+                var sourceIDString = String.Join(", ", keys);
+                sourceListLabel.Invoke((MethodInvoker)delegate {
+                    sourceListLabel.Text = $"Source IDs: ( {sourceIDString} )";
+                });
+
+                ueConnectedLabel.Invoke((MethodInvoker)delegate {
+                    ueConnectedLabel.Text = oTransferServer.UesCurrentlyConnected().ToString();
+                });
             }
-            lBufferToolstrip.Visible = false;
+
+            rxBandwidthLabel.Invoke((MethodInvoker)delegate {
+                rxBandwidthLabel.Text = "0 MB/s";
+            });
+
+            liveBufferLabel.Invoke((MethodInvoker)delegate {
+                liveBufferLabel.Text = "0";
+            });
+            txBufferLabel.Invoke((MethodInvoker)delegate {
+                txBufferLabel.Text = "0";
+            });
+
+            sourceTotalLabel.Invoke((MethodInvoker)delegate {
+                sourceTotalLabel.Text = "0";
+            });
+            sourceListLabel.Invoke((MethodInvoker)delegate {
+                sourceListLabel.Text = "";
+            });
+
+            ueConnectedLabel.Invoke((MethodInvoker)delegate {
+                ueConnectedLabel.Text = "False";
+            });
         }
 
         private void updateRxFrequency()
         {
             double rxFreq = Math.Round(1/ (((double) reqDelayClient) / 1000), 2);
-            lrxFreqToolstrip.Text = $"Rx: {rxFreq}Hz";
+            rxFrequencyLabel.Text = $"{rxFreq}Hz";
         }
 
         private void updateLiveFrequency()
         {
             double liveFreq = Math.Round(1 / (((double) showLiveDelay) / 1000), 2);
-            lliveFreqToolstrip.Text = $"Live: {liveFreq}Hz";
+            liveFrequencyLabel.Text = $"{liveFreq}Hz";
         }
     }
 }
