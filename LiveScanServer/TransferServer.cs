@@ -80,6 +80,8 @@ namespace KinectServer
 
         BufferTxAlgorithm oBufferAlgorithm;
 
+        DateTime statsLastTime;
+
         bool bServerRunning = false;
         private readonly object acceptLock = new object();
 
@@ -88,6 +90,15 @@ namespace KinectServer
         private int ueId = 0;
 
         private ConcurrentDictionary<IPAddress, UeStruct> ipAddressMap = new ConcurrentDictionary<IPAddress, UeStruct>();
+
+        private double bandwidth;
+        public double Bandwidth
+        {
+            get
+            {
+                return bandwidth;
+            }
+        }
 
         ~TransferServer()
         {
@@ -140,6 +151,10 @@ namespace KinectServer
                 bServerRunning = true;
                 Thread receivingThread = new Thread(this.ReceivingWorker);
                 receivingThread.Start();
+
+                Thread calculateMetrics = new Thread(this.CheckStatistics);
+                calculateMetrics.IsBackground = true;
+                calculateMetrics.Start();
             }
         }
 
@@ -154,6 +169,7 @@ namespace KinectServer
                 foreach (Socket socket in oServerSocket)
                     socket.Close();
 
+                oServerSocket.Clear();
                 lClientSockets.Clear();
                 oBufferAlgorithm.StopCleaner();
                 oBufferAlgorithm.CleanAllBuffers();
@@ -306,5 +322,64 @@ namespace KinectServer
                 }                
             };
         }
+
+        private void CheckStatistics()
+        {
+            // Here we calculate FPS, Mbps, and other metrics before we save them in a file ... 
+
+            while (bServerRunning)
+            {
+                Thread.Sleep(1000);
+
+                int _numSockets = lClientSockets.Count;
+                double totalMbps = 0;
+
+                //string result = "";
+                for (int ii = 0; ii < _numSockets; ++ii)
+                {
+                    int _rxBytesClient = lClientSockets[ii].lastFrameRxBytes;
+                    double _mbpsClient = Math.Round(GetMbps(_rxBytesClient), 2);
+
+                    totalMbps += _mbpsClient;
+                }
+
+                bandwidth = totalMbps;
+                resetStats();
+                resetTimer();
+            }
+        }
+        private double GetMbps(int bytes)
+        {
+            double mbps = 0.0;
+            if (bytes > 0)
+            {
+                uint interval = 1000; //[ms] consider interval of 1 sec for now...
+                DateTime mbpsTimeNow = DateTime.UtcNow;
+                TimeSpan timeDiff = mbpsTimeNow - statsLastTime;
+                Int32 _elapsedMs = Convert.ToInt32(timeDiff.TotalMilliseconds);
+
+                if (_elapsedMs >= interval)
+                {
+                    mbps = 1000.0 * ((bytes * 8.0) / 1e6) / (_elapsedMs);
+                }
+            }
+
+            return mbps;
+        }
+
+        private void resetTimer()
+        {
+            statsLastTime = DateTime.UtcNow;
+        }
+
+        private void resetStats()
+        {
+            int _numSockets = lClientSockets.Count;
+            for (int ii = 0; ii < _numSockets; ++ii)
+            {
+                lClientSockets[ii].lastFrameRxBytes = 0;
+            }
+        }
+
     }
 }

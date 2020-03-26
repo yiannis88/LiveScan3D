@@ -448,15 +448,15 @@ namespace KinectServer
                 {
                     lock (settings)
                     {
+                        var frames = sourceFrames.Values; // take copy of frames
                         bool bShowSkeletons = settings.bShowSkeletons;
 
-                        var clientCount = sourceFrames.Count;
                         PointCount = FramePointCount;
                         LineCount = 0;
                         if (bDrawMarkings)
                         {
                             //bounding box
-                            LineCount += 12 * clientCount;
+                            LineCount += 12 * frames.Count;
                             //markers
                             LineCount += settings.lMarkerPoses.Count * 3;
                             //cameras
@@ -469,30 +469,30 @@ namespace KinectServer
 
                         int lastFrameCount = 0;
                         // iterate through connected sources last frames
-                        foreach (int sourceID in SourceIDs)
+                        foreach (Frame clientFrame in frames)
                         {
-                            var clientFrame = sourceFrames[sourceID];
-                            /*
-                            clientFrame.Vertices = Transformer.NormaliseAroundMean(clientFrame.Vertices);
-                            var translation = new AffineTransform();
-                            translation.t = new float[] { 2, 0, 0 };
-                            clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, translation);
-                            */
                             // get and apply transformation to correctly locate and orientate in space
-                            clientFrame.Vertices = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetSourceTransform(clientFrame.SourceID));
+                            var verticesToDisplay = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetSourceTransform(clientFrame.SourceID));
+                            var vertexCount = verticesToDisplay.Count / 3;
 
-                            for (int i = 0; i < clientFrame.Vertices.Count / 3; i++)
+                            for (int i = 0; i < vertexCount; i++)
                             {
                                 var j = i + lastFrameCount;
-                                VBO[j].R = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3] + brightnessModifier)));
-                                VBO[j].G = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 1] + brightnessModifier)));
-                                VBO[j].B = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 2] + brightnessModifier)));
-                                VBO[j].A = 255;
-                                VBO[j].Position.X = clientFrame.Vertices[i * 3];
-                                VBO[j].Position.Y = clientFrame.Vertices[i * 3 + 1];
-                                VBO[j].Position.Z = clientFrame.Vertices[i * 3 + 2];
+                                if(j < VBO.Length)
+                                {
+                                    VBO[j].R = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3] + brightnessModifier)));
+                                    VBO[j].G = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 1] + brightnessModifier)));
+                                    VBO[j].B = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 2] + brightnessModifier)));
+                                    VBO[j].A = 255;
+                                    VBO[j].Position.X = verticesToDisplay[i * 3];
+                                    VBO[j].Position.Y = verticesToDisplay[i * 3 + 1];
+                                    VBO[j].Position.Z = verticesToDisplay[i * 3 + 2];
+                                }else
+                                {
+                                    Console.WriteLine($"{DateTime.Now.ToString("hh.mm.ss.fff")} OpenGL::OnUpdateFrame VBO buffer exceeded, skipping ({j}/{VBO.Length - 1})");
+                                }
                             }
-                            lastFrameCount += clientFrame.Vertices.Count / 3;
+                            lastFrameCount += vertexCount;
                         }
 
                         if (bDrawMarkings)

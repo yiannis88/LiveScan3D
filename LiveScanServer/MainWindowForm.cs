@@ -709,6 +709,9 @@ namespace KinectServer
                 rxBandwidthLabel.Invoke((MethodInvoker)delegate {
                     rxBandwidthLabel.Text = $"{oServer.Bandwidth} MB/s";
                 });
+                txBandwidthLabel.Invoke((MethodInvoker)delegate {
+                    txBandwidthLabel.Text = $"{oTransferServer.Bandwidth} MB/s";
+                });
 
                 liveBufferLabel.Invoke((MethodInvoker)delegate {
                     liveBufferLabel.Text = oBufferLiveShowAlgorithm.Count.ToString();
@@ -735,6 +738,9 @@ namespace KinectServer
 
             rxBandwidthLabel.Invoke((MethodInvoker)delegate {
                 rxBandwidthLabel.Text = "0 MB/s";
+            });
+            txBandwidthLabel.Invoke((MethodInvoker)delegate {
+                txBandwidthLabel.Text = "0 MB/s";
             });
 
             liveBufferLabel.Invoke((MethodInvoker)delegate {

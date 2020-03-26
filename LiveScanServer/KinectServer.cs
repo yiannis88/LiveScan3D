@@ -81,7 +81,7 @@ namespace KinectServer
         public string myFilePathProfiling;
         public string myFilePathStatsAlwaysOn; //This is always on, to capture info regarding the server
 
-        DateTime fpslastTime;
+        DateTime statsLastTime;
         public int localOffsetTs = 0;
 
         private readonly object acceptLock = new object();
@@ -432,7 +432,7 @@ namespace KinectServer
                 ipAddressBufferMap.Clear();
                 foreach (Socket socket in oServerSocket)
                     socket.Close();
-                //oServerSocket.Clear();
+                oServerSocket.Clear();
                 SocketListChanged();
             }
         }
@@ -895,7 +895,7 @@ namespace KinectServer
             {
                 uint interval = 1000; //[ms] consider interval of 1 sec for now...
                 DateTime mbpsTimeNow = DateTime.UtcNow;
-                TimeSpan timeDiff = mbpsTimeNow - fpslastTime;
+                TimeSpan timeDiff = mbpsTimeNow - statsLastTime;
                 Int32 _elapsedMs = Convert.ToInt32(timeDiff.TotalMilliseconds);
 
                 if (_elapsedMs >= interval)
@@ -912,7 +912,7 @@ namespace KinectServer
             double fps = -1.0;
             uint interval = 1000; //[ms] consider interval of 1 sec for now...
             DateTime fpsTimeNow = DateTime.UtcNow;
-            TimeSpan timeDiff = fpsTimeNow - fpslastTime;
+            TimeSpan timeDiff = fpsTimeNow - statsLastTime;
             Int32 _elapsedMs = Convert.ToInt32(timeDiff.TotalMilliseconds);
 
             if (_elapsedMs >= interval)
@@ -925,7 +925,7 @@ namespace KinectServer
 
         private void resetTimer()
         {
-            fpslastTime = DateTime.UtcNow;
+            statsLastTime = DateTime.UtcNow;
         }
 
         private void resetStats()

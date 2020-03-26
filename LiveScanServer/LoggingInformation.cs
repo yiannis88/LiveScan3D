@@ -19,7 +19,7 @@ public class LoggingInformation
             directory = basePath + "logging_output";
             if (Directory.Exists(directory))
             {
-                Console.WriteLine("Directory " + directory + " exists");
+                //Console.WriteLine("Directory " + directory + " exists");
             }
             else
             {

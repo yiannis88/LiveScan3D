@@ -15,6 +15,8 @@ namespace KinectServer
         List<byte[]> framesToTx = new List<byte[]>();
         List<Socket> lSocketsPerUe = new List<Socket>();
 
+        public int lastFrameRxBytes = 0;
+
         public TransferSocket(Socket ueSocket, int ueId, BufferTxAlgorithm oBufferAlg)
         {
             oSocket = ueSocket;
@@ -86,10 +88,11 @@ namespace KinectServer
                             for (int ii = 0; ii < framesToTx.Count; ii++) //todo: in the future, concatenate all frames into one and send them in one go... of course, we need to modify header
                             {
                                 jj = Math.Min(jj, _tempListSocket.Count - 1);
-                                Console.WriteLine(DateTime.Now.ToString("HH.mm.ss.fff") + " Frames to Send: " + framesToTx.Count + " _tempListSocket.Count " + _tempListSocket.Count + " start with jj " + jj + " and ii: " + ii + " size: " + framesToTx[ii].Length + " send signal: " + (int)(framesToTx[ii])[0] + " ts: " + BitConverter.ToInt32(framesToTx[ii], 9));
+                                //Console.WriteLine(DateTime.Now.ToString("HH.mm.ss.fff") + " Frames to Send: " + framesToTx.Count + " _tempListSocket.Count " + _tempListSocket.Count + " start with jj " + jj + " and ii: " + ii + " size: " + framesToTx[ii].Length + " send signal: " + (int)(framesToTx[ii])[0] + " ts: " + BitConverter.ToInt32(framesToTx[ii], 9));
 
                                 NetworkStream _streamT = new NetworkStream(_tempListSocket[jj]);
                                 int _length = framesToTx[ii].Length;
+                                lastFrameRxBytes += _length;
 
                                 await _streamT.WriteAsync(framesToTx[ii], 0, _length);
                                 jj = (jj < _tempListSocket.Count - 1) ? ++jj : jj = 0;
@@ -101,7 +104,9 @@ namespace KinectServer
                             byte[] _bufferSend = new byte[_hdrSizeTx]; //header is always 14 bytes; 1 for indicator, 1 for source ID, 4 for length, 4 for compression, and 4 for timestamp
                             _bufferSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_NO_FRAME; 
                             NetworkStream _streamT = new NetworkStream(oSocket);
-                            Console.WriteLine(DateTime.Now.ToString("HH.mm.ss.fff") + " No frame in queue send signal: " + (int)_bufferSend[0]);
+                            lastFrameRxBytes += _hdrSizeTx;
+
+                            //Console.WriteLine(DateTime.Now.ToString("HH.mm.ss.fff") + " No frame in queue send signal: " + (int)_bufferSend[0]);
                             await _streamT.WriteAsync(_bufferSend, 0, _hdrSizeTx);
                         }
                         else
@@ -115,9 +120,11 @@ namespace KinectServer
                                 {
                                     NetworkStream _streamT = new NetworkStream(lSocketsPerUe[ii]);
                                     int _length = framesToTx[kk].Length;
+                                    lastFrameRxBytes += _length;
+
                                     _streamT.Write(framesToTx[kk], 0, _length);
                                     _flag = false;
-                                    Console.WriteLine(DateTime.Now.ToString("HH.mm.ss.fff") + " Frames to Send (synchronous): " + framesToTx.Count + " frameNum: " + kk + " socket id: " + ii);
+                                    //Console.WriteLine(DateTime.Now.ToString("HH.mm.ss.fff") + " Frames to Send (synchronous): " + framesToTx.Count + " frameNum: " + kk + " socket id: " + ii);
                                     ii = (ii < lSocketsPerUe.Count - 1) ? ++ii : ii = 0;
                                 }
                             }

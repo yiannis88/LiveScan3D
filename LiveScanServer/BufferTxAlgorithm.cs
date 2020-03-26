@@ -128,7 +128,7 @@ namespace KinectServer
                 logInfo.SetFilePath(myFilePath);
                 string str = "Buffer\tDelayToEnqueue\tDeltaEnqueue\tQueueDelay\tDeltaDequeue";
                 logInfo.RedirectOutput(str);
-                Console.WriteLine("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " SetDirectory() for Tx Buffer");
+                //Console.WriteLine("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " SetDirectory() for Tx Buffer");
             }
             catch (Exception e)
             {
@@ -183,7 +183,7 @@ namespace KinectServer
                 lastEnqueuedTs = _enqueuedTs;
                 lock (stringOperationLock)
                 {
-                    Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::Enqueue ___ timestampFrameOrig: " + timestampFrameOrig + " _enqueuedTs " + _enqueuedTs + " _frameSize: " + _enqBuffer.Length + " Buffer: " + bufferedObjects.Count);
+                    //Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::Enqueue ___ timestampFrameOrig: " + timestampFrameOrig + " _enqueuedTs " + _enqueuedTs + " _frameSize: " + _enqBuffer.Length + " Buffer: " + bufferedObjects.Count);
                     bufferedObjects.Enqueue(new KinectServerBufferTxObject(_enqBuffer, _enqueuedTs, _deltaCreationTs, _deltaLastEnq, sourceID));
                 }
             }
@@ -198,7 +198,7 @@ namespace KinectServer
                 int UelastFrameTs = lTimestampsUes[UeId];
                 int tsUpdated = lTimestampsUes[UeId];
 
-                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::TryDequeue for UeId " + UeId + " with " + lTimestampsUes.Count + " lTimestampsUes[UeId] " + lTimestampsUes[UeId] + " UelastFrameTs " + UelastFrameTs + " tsUpdated " + tsUpdated + " Buffer: " + bufferedObjects.Count);
+                //Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::TryDequeue for UeId " + UeId + " with " + lTimestampsUes.Count + " lTimestampsUes[UeId] " + lTimestampsUes[UeId] + " UelastFrameTs " + UelastFrameTs + " tsUpdated " + tsUpdated + " Buffer: " + bufferedObjects.Count);
 
                 if (!bufferedObjects.IsEmpty)
                 {
@@ -220,7 +220,7 @@ namespace KinectServer
                 {
                     lTimestampsUes[UeId] = tsUpdated;
                     minTsDelete = lTimestampsUes.Min();
-                    Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::Dequeue  frames: " + _LFramesForTransmission.Count + " Buffer: " + bufferedObjects.Count + " LastTsDequeued: " + lTimestampsUes[UeId] + " minTsDelete " + minTsDelete);
+                    //Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::Dequeue  frames: " + _LFramesForTransmission.Count + " Buffer: " + bufferedObjects.Count + " LastTsDequeued: " + lTimestampsUes[UeId] + " minTsDelete " + minTsDelete);
                 }
 
             }
@@ -241,23 +241,28 @@ namespace KinectServer
                 {
                     KinectServerBufferTxObject item;
                     string bufferStatsL = null;
-                    Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::CleanBuffer TryClean buffer of size: " + bufferedObjects.Count);
+                    //Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::CleanBuffer TryClean buffer of size: " + bufferedObjects.Count);
                     if (bufferedObjects.TryPeek(out item))
                     {
-                        Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " Object with EnqueuedTs: " + item.TimestampEnqueued + " TsToBeDeleted (upto): " + minTsDelete);
+                        //Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " Object with EnqueuedTs: " + item.TimestampEnqueued + " TsToBeDeleted (upto): " + minTsDelete);
                         if (item.TimestampEnqueued <= minTsDelete)
                         {
-                            bufferedObjects.TryDequeue(out item);
-                            int _queueSize = bufferedObjects.Count();
-                            int _delayToEnqueue = item.DeltaCreationEnq;
-                            int _deltaEnqueue = item.DeltaEnq;
-                            int _dequeuedTs = GetTimestamp(OffsetFromUtcTS);
-                            int _deltaStayedQueue = deltaCorrection(_dequeuedTs - item.TimestampEnqueued);
-                            int deltaLastDeq = (lastDequeuedTs > 0) ? deltaCorrection(_dequeuedTs - lastDequeuedTs) : 0;
-                            lastDequeuedTs = _dequeuedTs;
+                            if (bufferedObjects.TryDequeue(out item))
+                            {
+                                int _queueSize = bufferedObjects.Count();
+                                int _delayToEnqueue = item.DeltaCreationEnq;
+                                int _deltaEnqueue = item.DeltaEnq;
+                                int _dequeuedTs = GetTimestamp(OffsetFromUtcTS);
+                                int _deltaStayedQueue = deltaCorrection(_dequeuedTs - item.TimestampEnqueued);
+                                int deltaLastDeq = (lastDequeuedTs > 0) ? deltaCorrection(_dequeuedTs - lastDequeuedTs) : 0;
+                                lastDequeuedTs = _dequeuedTs;
 
-                            bufferStatsL += _queueSize + "\t" + _delayToEnqueue + "\t" + _deltaEnqueue + "\t" + _deltaStayedQueue + "\t" + deltaLastDeq + "\n";
-                            Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::CleanBuffer Removed Ts: " + item.TimestampEnqueued + " Stayed in Queue [ms]: " + _deltaStayedQueue + " Buffer: " + bufferedObjects.Count);
+                                bufferStatsL += _queueSize + "\t" + _delayToEnqueue + "\t" + _deltaEnqueue + "\t" + _deltaStayedQueue + "\t" + deltaLastDeq + "\n";
+                                //Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::CleanBuffer Removed Ts: " + item.TimestampEnqueued + " Stayed in Queue [ms]: " + _deltaStayedQueue + " Buffer: " + bufferedObjects.Count);
+                            }else
+                            {
+                                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " BufferTxAlgorithm::CleanBuffer Item Cleared Before Removal, Buffer: " + bufferedObjects.Count);
+                            }
                         }
                         else
                             break; // break the loop and check again the queue in 20ms (Note that the queue is based on FIFO --> ascending order)
