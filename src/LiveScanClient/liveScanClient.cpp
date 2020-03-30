@@ -495,6 +495,7 @@ LRESULT CALLBACK LiveScanClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 						delete p;
 					}
 					m_pClientSocket.clear();
+					m_clBuffer->Clear();
 
 					m_bConnected = false;
 					SetDlgItemTextA(m_hWnd, IDC_BUTTON_CONNECT, "Connect");

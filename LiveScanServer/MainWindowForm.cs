@@ -152,7 +152,8 @@ namespace KinectServer
             {
                 oServer.StopServer();
                 oTransferServer.StopServer();
-                
+                sourceFrames.Clear();
+
                 btStart.Text = "Start server";
                 TCPPicker.Enabled = true;
                 ueTCPPicker.Enabled = true;
@@ -380,17 +381,20 @@ namespace KinectServer
         private List<Frame> LoadFrames(){
 
             List<Frame> frames = new List<Frame>();
-
-            foreach (string fileName in Directory.EnumerateFiles("frames", "*.xml"))
+            if (Directory.Exists("frames"))
             {
-                Frame frame; 
-                XmlSerializer serializer = new XmlSerializer(typeof(Frame));
-            
-                using(StreamReader file = new StreamReader(fileName)){ 
-                    frame = (Frame)serializer.Deserialize(file);
-                }  
+                foreach (string fileName in Directory.EnumerateFiles("frames", "*.xml"))
+                {
+                    Frame frame;
+                    XmlSerializer serializer = new XmlSerializer(typeof(Frame));
 
-                frames.Add(frame);
+                    using (StreamReader file = new StreamReader(fileName))
+                    {
+                        frame = (Frame)serializer.Deserialize(file);
+                    }
+
+                    frames.Add(frame);
+                }
             }
 
             return frames;
@@ -707,10 +711,10 @@ namespace KinectServer
                 Thread.Sleep(200);
 
                 rxBandwidthLabel.Invoke((MethodInvoker)delegate {
-                    rxBandwidthLabel.Text = $"{oServer.Bandwidth} MB/s";
+                    rxBandwidthLabel.Text = $"{oServer.Bandwidth} Mbps";
                 });
                 txBandwidthLabel.Invoke((MethodInvoker)delegate {
-                    txBandwidthLabel.Text = $"{oTransferServer.Bandwidth} MB/s";
+                    txBandwidthLabel.Text = $"{oTransferServer.Bandwidth} Mbps";
                 });
 
                 liveBufferLabel.Invoke((MethodInvoker)delegate {
@@ -737,10 +741,10 @@ namespace KinectServer
             }
 
             rxBandwidthLabel.Invoke((MethodInvoker)delegate {
-                rxBandwidthLabel.Text = "0 MB/s";
+                rxBandwidthLabel.Text = "0 Mbps";
             });
             txBandwidthLabel.Invoke((MethodInvoker)delegate {
-                txBandwidthLabel.Text = "0 MB/s";
+                txBandwidthLabel.Text = "0 Mbps";
             });
 
             liveBufferLabel.Invoke((MethodInvoker)delegate {

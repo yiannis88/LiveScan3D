@@ -453,7 +453,7 @@
             this.txBandwidthLabel.Name = "txBandwidthLabel";
             this.txBandwidthLabel.Size = new System.Drawing.Size(116, 30);
             this.txBandwidthLabel.TabIndex = 3;
-            this.txBandwidthLabel.Text = "0 MB/s";
+            this.txBandwidthLabel.Text = "0 Mbps";
             this.txBandwidthLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // label7
@@ -490,7 +490,7 @@
             this.rxBandwidthLabel.Name = "rxBandwidthLabel";
             this.rxBandwidthLabel.Size = new System.Drawing.Size(116, 30);
             this.rxBandwidthLabel.TabIndex = 0;
-            this.rxBandwidthLabel.Text = "0 MB/s";
+            this.rxBandwidthLabel.Text = "0 Mbps";
             this.rxBandwidthLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // groupBox2

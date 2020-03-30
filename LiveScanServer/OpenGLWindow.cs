@@ -434,91 +434,87 @@ namespace KinectServer
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
-            if (sourceFrames.Count > 0)
+            if ((DateTime.Now - tFPSUpdateTimer).Seconds >= 1)
             {
-                if ((DateTime.Now - tFPSUpdateTimer).Seconds >= 1)
-                {
-                    double FPS = nTickCounter / (DateTime.Now - tFPSUpdateTimer).TotalSeconds;
-                    this.Title = "FPS: " + string.Format("{0:F}", FPS);
+                double FPS = nTickCounter / (DateTime.Now - tFPSUpdateTimer).TotalSeconds;
+                this.Title = "FPS: " + string.Format("{0:F}", FPS);
 
-                    tFPSUpdateTimer = DateTime.Now;
-                    nTickCounter = 0;
-                }
-                try
-                {
-                    lock (settings)
-                    {
-                        var frames = sourceFrames.Values; // take copy of frames
-                        bool bShowSkeletons = settings.bShowSkeletons;
-
-                        PointCount = FramePointCount;
-                        LineCount = 0;
-                        if (bDrawMarkings)
-                        {
-                            //bounding box
-                            LineCount += 12 * frames.Count;
-                            //markers
-                            LineCount += settings.lMarkerPoses.Count * 3;
-                            //cameras
-                            LineCount += cameraPoses.Count * 3;
-                            if (bShowSkeletons)
-                                LineCount += 24 * FrameBodyCount;
-                        }
-
-                        VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
-
-                        int lastFrameCount = 0;
-                        // iterate through connected sources last frames
-                        foreach (Frame clientFrame in frames)
-                        {
-                            // get and apply transformation to correctly locate and orientate in space
-                            var verticesToDisplay = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetSourceTransform(clientFrame.SourceID));
-                            var vertexCount = verticesToDisplay.Count / 3;
-
-                            for (int i = 0; i < vertexCount; i++)
-                            {
-                                var j = i + lastFrameCount;
-                                if(j < VBO.Length)
-                                {
-                                    VBO[j].R = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3] + brightnessModifier)));
-                                    VBO[j].G = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 1] + brightnessModifier)));
-                                    VBO[j].B = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 2] + brightnessModifier)));
-                                    VBO[j].A = 255;
-                                    VBO[j].Position.X = verticesToDisplay[i * 3];
-                                    VBO[j].Position.Y = verticesToDisplay[i * 3 + 1];
-                                    VBO[j].Position.Z = verticesToDisplay[i * 3 + 2];
-                                }else
-                                {
-                                    Console.WriteLine($"{DateTime.Now.ToString("hh.mm.ss.fff")} OpenGL::OnUpdateFrame VBO buffer exceeded, skipping ({j}/{VBO.Length - 1})");
-                                }
-                            }
-                            lastFrameCount += vertexCount;
-                        }
-
-                        if (bDrawMarkings)
-                        {
-                            int iCurLineCount = 0;
-                            iCurLineCount += AddBoundingBox(PointCount + 2 * iCurLineCount);
-                            for (int i = 0; i < settings.lMarkerPoses.Count; i++)
-                            {
-                                iCurLineCount += AddMarker(PointCount + 2 * iCurLineCount, settings.lMarkerPoses[i].pose);
-                            }
-                            for (int i = 0; i < cameraPoses.Count; i++)
-                            {
-                                iCurLineCount += AddCamera(PointCount + 2 * iCurLineCount, cameraPoses[i]);
-                            }
-                            if (bShowSkeletons)
-                                iCurLineCount += AddBodies(PointCount + 2 * iCurLineCount);
-                        }
-
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
-                
+                tFPSUpdateTimer = DateTime.Now;
+                nTickCounter = 0;
             }
+            try
+            {
+                lock (settings)
+                {
+                    var frames = sourceFrames.Values; // take copy of frames
+                    bool bShowSkeletons = settings.bShowSkeletons;
+
+                    PointCount = FramePointCount;
+                    LineCount = 0;
+                    if (bDrawMarkings)
+                    {
+                        //bounding box
+                        LineCount += 12;
+                        //markers
+                        LineCount += settings.lMarkerPoses.Count * 3;
+                        //cameras
+                        LineCount += cameraPoses.Count * 3;
+                        if (bShowSkeletons)
+                            LineCount += 24 * FrameBodyCount;
+                    }
+
+                    VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
+
+                    int lastFrameCount = 0;
+                    // iterate through connected sources last frames
+                    foreach (Frame clientFrame in frames)
+                    {
+                        // get and apply transformation to correctly locate and orientate in space
+                        var verticesToDisplay = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetSourceTransform(clientFrame.SourceID));
+                        var vertexCount = verticesToDisplay.Count / 3;
+
+                        for (int i = 0; i < vertexCount; i++)
+                        {
+                            var j = i + lastFrameCount;
+                            if(j < VBO.Length)
+                            {
+                                VBO[j].R = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3] + brightnessModifier)));
+                                VBO[j].G = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 1] + brightnessModifier)));
+                                VBO[j].B = (byte)Math.Max(0, Math.Min(255, (clientFrame.RGB[i * 3 + 2] + brightnessModifier)));
+                                VBO[j].A = 255;
+                                VBO[j].Position.X = verticesToDisplay[i * 3];
+                                VBO[j].Position.Y = verticesToDisplay[i * 3 + 1];
+                                VBO[j].Position.Z = verticesToDisplay[i * 3 + 2];
+                            }else
+                            {
+                                Console.WriteLine($"{DateTime.Now.ToString("hh.mm.ss.fff")} OpenGL::OnUpdateFrame VBO buffer exceeded, skipping ({j}/{VBO.Length - 1})");
+                            }
+                        }
+                        lastFrameCount += vertexCount;
+                    }
+
+                    if (bDrawMarkings)
+                    {
+                        int iCurLineCount = 0;
+                        iCurLineCount += AddBoundingBox(PointCount + 2 * iCurLineCount);
+                        for (int i = 0; i < settings.lMarkerPoses.Count; i++)
+                        {
+                            iCurLineCount += AddMarker(PointCount + 2 * iCurLineCount, settings.lMarkerPoses[i].pose);
+                        }
+                        for (int i = 0; i < cameraPoses.Count; i++)
+                        {
+                            iCurLineCount += AddCamera(PointCount + 2 * iCurLineCount, cameraPoses[i]);
+                        }
+                        if (bShowSkeletons)
+                            iCurLineCount += AddBodies(PointCount + 2 * iCurLineCount);
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }      
         }
 
         /// <summary>

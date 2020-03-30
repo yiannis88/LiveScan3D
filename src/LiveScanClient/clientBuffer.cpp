@@ -170,3 +170,13 @@ ClientBuffer::bufferStatistics()
 		}
 	}
 }
+
+void
+ClientBuffer::Clear()
+{
+	std::queue<QueueObject> empty;
+	std::swap(m_lBufferedFramesReadyForTx, empty);
+
+	m_lastTsBuffered = 0;
+	m_lastTsBufferedDeq = 0;
+}

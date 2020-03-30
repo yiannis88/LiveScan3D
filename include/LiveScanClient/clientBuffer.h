@@ -39,6 +39,7 @@ public:
 	 *       at the server also)
 	 */
 	int Dequeue(std::vector<std::vector<char> >& outFrames, int clockOffset);
+	void Clear();
 
 private:
 	/**

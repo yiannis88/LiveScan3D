@@ -431,7 +431,16 @@ namespace KinectServer
 
                 ipAddressBufferMap.Clear();
                 foreach (Socket socket in oServerSocket)
-                    socket.Close();
+                {
+                    try
+                    {
+                        socket.Shutdown(SocketShutdown.Both);
+                    }
+                    finally
+                    {
+                        socket.Close();
+                    }
+                }
                 oServerSocket.Clear();
                 SocketListChanged();
             }
