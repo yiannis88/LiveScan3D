@@ -97,7 +97,7 @@ namespace KinectServer
 
             oTransferServer.SetBufferClass(oBufferAlgorithm);
             oServer.SetLiveShowBuffer(oBufferLiveShowAlgorithm);
-            oServer.SetMainWindowForm(this);
+            //oServer.SetMainWindowForm(this);
 
             InitializeComponent();
         }

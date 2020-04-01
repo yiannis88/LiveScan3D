@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>LiveScanPlayer</RootNamespace>
     <AssemblyName>LiveScanPlayer</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -70,6 +71,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -85,6 +87,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LiveScanServerLib\LiveScanServerLib.csproj">
+      <Project>{db758710-0f9b-4caa-8d9a-9d986f520ba9}</Project>
+      <Name>LiveScanServerLib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LiveScanServer\LiveScanServer.csproj">
       <Project>{78422b2c-0ef1-4a28-a40e-2a7c4a9204b1}</Project>
       <Name>LiveScanServer</Name>

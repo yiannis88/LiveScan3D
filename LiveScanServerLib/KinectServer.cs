@@ -96,7 +96,7 @@ namespace KinectServer
         const string ntpServer = "pool.ntp.org";// "ntp1a.versadns.com";//"pool.ntp.org";//"0.uk.pool.ntp.org";// "time.windows.com"; //2.jp.pool.ntp.org
         InternetTime.SNTPClient sntpClient = new InternetTime.SNTPClient(ntpServer);
 
-        MainWindowForm oMainWindowForm;
+        //MainWindowForm oMainWindowForm;
 
         private double bandwidth;
         public double Bandwidth
@@ -122,10 +122,12 @@ namespace KinectServer
             }
         }
 
+        /*
         public void SetMainWindowForm(MainWindowForm _mwf)
         {
             oMainWindowForm = _mwf;
         }
+        */
 
         public void SetLiveShowBuffer(BufferLiveShowAlgorithm.BufferLiveShowAlgorithm oLsBfr)
         {
@@ -888,8 +890,10 @@ namespace KinectServer
                 {
                     bandwidth = totalMbps;
                     double _totalFps = Math.Round(GetFps(totalFrames), 2);
-                    double _displayedFps = Math.Round(GetFps(oMainWindowForm.GetDisplayedFrameCounter()), 2);
-                    result += _totalFps + "\t" + _displayedFps + "\t" + totalMbps + "\t" + DateTime.Now.ToString("hh.mm.ss.fff") + "\t" + localOffsetTs;
+                    //double _displayedFps = Math.Round(GetFps(oMainWindowForm.GetDisplayedFrameCounter()), 2);
+                    result += _totalFps + "\t" + 
+                        //_displayedFps + 
+                        "\t" + totalMbps + "\t" + DateTime.Now.ToString("hh.mm.ss.fff") + "\t" + localOffsetTs;
                     logOutputStatsAlwaysOn.RedirectOutput(result);
                     resetStats();
                     resetTimer();
