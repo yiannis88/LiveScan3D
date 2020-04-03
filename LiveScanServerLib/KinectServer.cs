@@ -303,18 +303,23 @@ namespace KinectServer
                 }
                 Thread ntpSynchronisation = new Thread(this.NtpSynchronisation);
                 ntpSynchronisation.IsBackground = true;
+                ntpSynchronisation.Name = "RxNtpSynchronisation";
                 ntpSynchronisation.Start();
                 Thread receivingThread = new Thread(this.ReceivingWorker);
                 receivingThread.IsBackground = true;
+                receivingThread.Name = "RxReceiving";
                 receivingThread.Start();
                 Thread calculateMetrics = new Thread(this.CheckStatistics);
                 calculateMetrics.IsBackground = true;
+                calculateMetrics.Name = "RxServerMetrics";
                 calculateMetrics.Start();
                 Thread receivingLatestFrame = new Thread(this.GetLatestFrame);
                 receivingLatestFrame.IsBackground = true;
+                receivingLatestFrame.Name = "RxReceivingLatestFrame";
                 receivingLatestFrame.Start();
                 Thread reqLatestFrame = new Thread(this.RequestForLatestFrame);
                 reqLatestFrame.IsBackground = true;
+                reqLatestFrame.Name = "RxReqLatestFrame";
                 reqLatestFrame.Start();
             }
         }

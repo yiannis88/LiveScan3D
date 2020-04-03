@@ -1332,7 +1332,7 @@ void LiveScanClient::ShowFPS()
 		}
 
 		WCHAR szStatusMessage[64];
-		StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f", fps);
+		StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f, Buffer = %d", fps, m_clBuffer->size());
 
 		if (SetStatusMessage(szStatusMessage, 1000, false))
 		{

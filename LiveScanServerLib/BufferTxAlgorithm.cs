@@ -42,6 +42,7 @@ namespace KinectServer
         {
             cleaner = new Thread(this.CleanBuffer);
             cleaner.IsBackground = true;
+            cleaner.Name = "TxBufferCleaner";
             cleaner.Start();
         }
 

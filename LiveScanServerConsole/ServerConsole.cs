@@ -69,6 +69,7 @@ namespace KinectServer
         {
             Console.WriteLine("  LiveScan3D  ");
             Console.WriteLine("==============");
+            Console.WriteLine("==============");
             Console.WriteLine("");
 
             while(Array.IndexOf(exitCommands, input) == -1)
@@ -116,8 +117,8 @@ namespace KinectServer
         {
             if (!bServerRunning)
             {
-                oServer.StartServer();
-                oTransferServer.StartServer();
+                oServer.StopServer();
+                oTransferServer.StopServer();
                 Console.WriteLine("Server stopped");
             }
             else

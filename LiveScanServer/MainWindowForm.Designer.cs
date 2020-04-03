@@ -247,6 +247,7 @@
             // 
             this.statsWorker.WorkerSupportsCancellation = true;
             this.statsWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bufferStats_DoWork);
+            this.statsWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bufferStats_RunWorkerCompleted);
             // 
             // ueTCPPicker
             // 

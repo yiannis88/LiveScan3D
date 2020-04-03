@@ -739,31 +739,18 @@ namespace KinectServer
                     ueConnectedLabel.Text = oTransferServer.UesCurrentlyConnected().ToString();
                 });
             }
+        }
 
-            rxBandwidthLabel.Invoke((MethodInvoker)delegate {
-                rxBandwidthLabel.Text = "0 Mbps";
-            });
-            txBandwidthLabel.Invoke((MethodInvoker)delegate {
-                txBandwidthLabel.Text = "0 Mbps";
-            });
-
-            liveBufferLabel.Invoke((MethodInvoker)delegate {
-                liveBufferLabel.Text = "0";
-            });
-            txBufferLabel.Invoke((MethodInvoker)delegate {
-                txBufferLabel.Text = "0";
-            });
-
-            sourceTotalLabel.Invoke((MethodInvoker)delegate {
-                sourceTotalLabel.Text = "0";
-            });
-            sourceListLabel.Invoke((MethodInvoker)delegate {
-                sourceListLabel.Text = "";
-            });
-
-            ueConnectedLabel.Invoke((MethodInvoker)delegate {
-                ueConnectedLabel.Text = "False";
-            });
+        private void bufferStats_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            
+            rxBandwidthLabel.Text = "0 Mbps";
+            txBandwidthLabel.Text = "0 Mbps";
+            liveBufferLabel.Text = "0";
+            txBufferLabel.Text = "0";
+            sourceTotalLabel.Text = "0";
+            sourceListLabel.Text = "";
+            ueConnectedLabel.Text = "False";
         }
 
         private void updateRxFrequency()

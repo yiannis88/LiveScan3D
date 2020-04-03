@@ -40,6 +40,7 @@ namespace BufferLiveShowAlgorithm
         {
             Thread bufferStats = new Thread(this.BufferStats);
             bufferStats.IsBackground = true;
+            bufferStats.Name = "LiveBufferStats";
             bufferStats.Start();
         }
 

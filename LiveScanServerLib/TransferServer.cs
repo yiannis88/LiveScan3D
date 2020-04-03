@@ -150,10 +150,12 @@ namespace KinectServer
                 }
                 bServerRunning = true;
                 Thread receivingThread = new Thread(this.ReceivingWorker);
+                receivingThread.Name = "TxReceiving";
                 receivingThread.Start();
 
                 Thread calculateMetrics = new Thread(this.CheckStatistics);
                 calculateMetrics.IsBackground = true;
+                calculateMetrics.Name = "TxServerMetrics";
                 calculateMetrics.Start();
             }
         }

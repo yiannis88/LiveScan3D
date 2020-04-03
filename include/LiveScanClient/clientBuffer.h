@@ -40,6 +40,7 @@ public:
 	 */
 	int Dequeue(std::vector<std::vector<char> >& outFrames, int clockOffset);
 	void Clear();
+	int size();
 
 private:
 	/**

@@ -42,6 +42,9 @@ public class LoggingInformation
 
     public void RedirectOutput(string msg)
     {
+        // Not thread safe, causing exceptions for concurrent uses of same file
+        // Will isolate when file stat dumping is required
+        /*
         try
         {
             using (StreamWriter sw = (File.Exists(filePath)) ? File.AppendText(filePath) : File.CreateText(filePath))
@@ -55,7 +58,7 @@ public class LoggingInformation
         {
             if (e.Source != null)
                 Console.WriteLine("IOException LoggingInformation source: {0} ", e.Source);
-        }
+        }*/
     }
 
     public void SetFilePath(string path)

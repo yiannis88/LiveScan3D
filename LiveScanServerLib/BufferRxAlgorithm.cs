@@ -55,6 +55,7 @@ public class BufferRxAlgorithm
 
         Thread bufferStats = new Thread(this.BufferStats);
         bufferStats.IsBackground = true;
+        bufferStats.Name = $"RxBufferStats::{clientId_str}";
         bufferStats.Start();
     }
 

@@ -180,3 +180,9 @@ ClientBuffer::Clear()
 	m_lastTsBuffered = 0;
 	m_lastTsBufferedDeq = 0;
 }
+
+int
+ClientBuffer::size()
+{
+	return m_lBufferedFramesReadyForTx.size();
+}
