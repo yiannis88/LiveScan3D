@@ -70,7 +70,8 @@ namespace KinectServer
         KinectSettings oSettings = new KinectSettings();
         //The live view window class
         OpenGLWindow oOpenGLWindow;
-        ConcurrentDictionary<int, Frame> sourceFrames = new ConcurrentDictionary<int, Frame>();
+
+        SourceCollection sources = new SourceCollection();
         List<Frame> LocalFrames = new List<Frame>();
 
         public MainWindowForm()
@@ -139,6 +140,8 @@ namespace KinectServer
                 ueTCPPicker.Enabled = false;
                 btShowLive.Enabled = true;
 
+                sources.StartCleaner();
+
                 if (!updateWorker.IsBusy)
                     updateWorker.RunWorkerAsync();
                 if (!statsWorker.IsBusy)
@@ -152,7 +155,7 @@ namespace KinectServer
             {
                 oServer.StopServer();
                 oTransferServer.StopServer();
-                sourceFrames.Clear();
+                sources.Reset();
 
                 btStart.Text = "Start server";
                 TCPPicker.Enabled = true;
@@ -217,7 +220,7 @@ namespace KinectServer
 
             bLiveViewRunning = true;
             oOpenGLWindow = new OpenGLWindow();
-            oOpenGLWindow.setSourceFrameDict(sourceFrames);
+            oOpenGLWindow.SetSourceCollection(sources);
             oOpenGLWindow.Run();
         }
 
@@ -312,7 +315,12 @@ namespace KinectServer
                 var (lFramesRGB, lFramesVerts, lFramesBody, _outMinTimestamp, _sourceID) = oBufferLiveShowAlgorithm.Dequeue(_tsOffsetFromUtcTime);
                 if (lFramesRGB.Count > 0)
                 {
-                    var liveFrame = new Frame(new List<Single>(), new List<byte>(), new List<Body>(), _sourceID);
+                    var liveFrame = new Frame { 
+                        Vertices = new List<Single>(), 
+                        RGB = new List<byte>(), 
+                        Bodies = new List<Body>(), 
+                        SourceID = _sourceID 
+                    };
                     for (int i = 0; i < lFramesRGB.Count; i++)
                     {
                         liveFrame.Vertices.AddRange(lFramesVerts[i]);
@@ -321,7 +329,7 @@ namespace KinectServer
                     }
                     lAllCameraPoses.AddRange(oServer.lCameraPoses);
 
-                    sourceFrames[liveFrame.SourceID] = liveFrame;
+                    sources.AddFrame(liveFrame);
                     
                     //TODO add local frames to UE
                     if (oTransferServer.UesCurrentlyConnected())
@@ -338,7 +346,7 @@ namespace KinectServer
                     if (LocalFrames.Count > 0)
                     {
                         var localFrame = LocalFrames[frameCounter % LocalFrames.Count];
-                        if (oOpenGLWindow != null) oOpenGLWindow.AddClientFrame(localFrame);
+                        sources.AddFrame(localFrame);
                         
                         //TODO add local frames to UE
                         if (oTransferServer.UesCurrentlyConnected())
@@ -369,7 +377,12 @@ namespace KinectServer
         private void ExportFrame(List<Single> lFramesVerts, List<byte> lFramesRGB, List<Body> lFramesBody)//, List<AffineTransform> lCameraPoses)
         {
 
-            var frame = new Frame(lFramesVerts, lFramesRGB, lFramesBody, 1);//, lCameraPoses);
+            var frame = new Frame { 
+                Vertices = lFramesVerts,
+                RGB = lFramesRGB,
+                Bodies = lFramesBody,
+                SourceID = 1
+                };//, lCameraPoses);
 
             XmlSerializer serializer = new XmlSerializer(typeof(Frame));
 
@@ -725,10 +738,10 @@ namespace KinectServer
                 });
 
                 sourceTotalLabel.Invoke((MethodInvoker)delegate {
-                    sourceTotalLabel.Text = sourceFrames.Count.ToString();
+                    sourceTotalLabel.Text = sources.Count.ToString();
                 });
 
-                var keys = new List<int>(sourceFrames.Keys);
+                var keys = new List<int>(sources.SourceIDs);
                 keys.Sort();
                 var sourceIDString = String.Join(", ", keys);
                 sourceListLabel.Invoke((MethodInvoker)delegate {

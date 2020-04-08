@@ -20,25 +20,23 @@ using System.IO;
 namespace KinectServer
 {
 
-    //Basic structure to hold vertices, rgb info and bodies
-    public struct Frame
+    //Basic class to hold vertices, rgb info and bodies
+    public class Frame
     {
         public List<Single> Vertices;
         public List<byte> RGB;
         public List<Body> Bodies;
         public int SourceID;
         //public List<AffineTransform> CameraPoses;
-
-        public Frame(List<Single> vertsin, List<byte> rgbin, List<Body> bodiesin, int sourceID)//, List<AffineTransform> cameraPosesin)
-        {
-            Vertices = vertsin;
-            RGB = rgbin;
-            Bodies = bodiesin;
-            SourceID = sourceID;
-            //CameraPoses = cameraPosesin;
-            // TODO fix serialization to allow back in
-        }
     }
+
+    public class Source
+    {
+        public Frame Frame { get; set; }
+        public KinectSettings Settings { get; set; }
+        public DateTime LastUpdated { get; set; }
+    }
+
     public struct Point2f
     {
         public float X;

@@ -56,7 +56,7 @@ namespace KinectServer
         float[] targetPosition = new float[3];
 
         // live storage of frames indexed by client ID
-        ConcurrentDictionary<int, Frame> sourceFrames = new ConcurrentDictionary<int, Frame>();
+        SourceCollection sources = new SourceCollection();
         // client id of currently selected source for control, -1 = none
         public int SelectedFigure = -1;
         // object controlling placement of sources, used for retrieving transformations before display
@@ -105,13 +105,13 @@ namespace KinectServer
             targetPosition[2] = 0;
 
             // share live client frames with transformer
-            transformer.setSourceFrameDict(sourceFrames);
+            transformer.setSourceCollection(sources);
         }
 
-        public void setSourceFrameDict(ConcurrentDictionary<int, Frame> _sourceFrames)
+        public void SetSourceCollection(SourceCollection _sources)
         {
-            sourceFrames = _sourceFrames;
-            transformer.setSourceFrameDict(_sourceFrames);
+            sources = _sources;
+            transformer.setSourceCollection(_sources);
         }
 
         public void CloudUpdateTick()
@@ -204,7 +204,7 @@ namespace KinectServer
         {
             get
             {
-                return new List<int>(sourceFrames.Keys);
+                return new List<int>(sources.SourceIDs);
             }
         }
 
@@ -400,20 +400,14 @@ namespace KinectServer
             MousePrevious.Y = e.Y;
         }
 
-        // used by main window to supply display with live frames
-        public void AddClientFrame(Frame frame)
-        {
-            sourceFrames[frame.SourceID] = frame;
-        }
-
         private int FramePointCount
         {
             get
             {
                 int count = 0;
-                foreach (Frame frame in sourceFrames.Values)
+                foreach (Source source in sources.Sources)
                 {
-                    count += frame.Vertices.Count / 3;
+                    count += source.Frame.Vertices.Count / 3;
                 }
                 return count;
             }
@@ -424,9 +418,9 @@ namespace KinectServer
             get
             {
                 int count = 0;
-                foreach (Frame frame in sourceFrames.Values)
+                foreach (Source source in sources.Sources)
                 {
-                    count += frame.Bodies.Count;
+                    count += source.Frame.Bodies.Count;
                 }
                 return count;
             }
@@ -446,7 +440,7 @@ namespace KinectServer
             {
                 lock (settings)
                 {
-                    var frames = sourceFrames.Values; // take copy of frames
+                    var _sources = sources.Sources; // take copy of frames
                     bool bShowSkeletons = settings.bShowSkeletons;
 
                     PointCount = FramePointCount;
@@ -467,8 +461,9 @@ namespace KinectServer
 
                     int lastFrameCount = 0;
                     // iterate through connected sources last frames
-                    foreach (Frame clientFrame in frames)
+                    foreach (Source source in _sources)
                     {
+                        var clientFrame = source.Frame;
                         // get and apply transformation to correctly locate and orientate in space
                         var verticesToDisplay = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetSourceTransform(clientFrame.SourceID));
                         var vertexCount = verticesToDisplay.Count / 3;
