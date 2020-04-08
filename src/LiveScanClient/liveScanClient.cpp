@@ -1007,12 +1007,23 @@ LiveScanClient::HandleSocketTransmit(std::vector<int> signalInfoForTx, fd_set wr
 						for (int jj = socketInitial; jj >= 0; jj--)
 						{
 							if (m_pClientSocket.at(jj)->GetSocket() != INVALID_SOCKET && FD_ISSET(m_pClientSocket.at(jj)->GetSocket(), &write_fds))
-							{								
-								flagTcpMultConSend = true;
-								vector<char> _bufferTx;
-								_bufferTx = bufferToTx.at(ii);
-								_bufferTx.insert(_bufferTx.begin(), byteToSend);
-								SendFrame(_bufferTx, jj);
+							{
+								double randomDrop = rand();
+								double probRand = randomDrop / RAND_MAX;
+								if (probRand > m_randomLosses)
+								{
+									flagTcpMultConSend = true;
+									vector<char> _bufferTx;
+									_bufferTx = bufferToTx.at(ii);
+									_bufferTx.insert(_bufferTx.begin(), byteToSend);
+									SendFrame(_bufferTx, jj);
+								}
+								else {
+									m_droppedFrame++;
+									vector<char> _byteSend(_hdrSize, MSG_NO_FRAME);
+									SendFrame(_byteSend, jj);
+									break;
+								}
 							}
 							if (flagTcpMultConSend)
 							{
@@ -1332,7 +1343,7 @@ void LiveScanClient::ShowFPS()
 		}
 
 		WCHAR szStatusMessage[64];
-		StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f, Buffer = %d", fps, m_clBuffer->size());
+		StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f, Buffer = %d, Dropped = %d", fps, m_clBuffer->size(), m_droppedFrame);
 
 		if (SetStatusMessage(szStatusMessage, 1000, false))
 		{
