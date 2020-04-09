@@ -25,27 +25,31 @@ namespace KinectServer
     public class DisplayFrameTransformer{
 
         public DisplayFrameTransformer(){}
-        public DisplayFrameTransformer(ConcurrentDictionary<int, Frame> sourceFrames){
-            this.sourceFrames = sourceFrames;
+        public DisplayFrameTransformer(SourceCollection sources)
+        {
+            this.sources = sources;
         }
 
-        // shared variable with OpenGL window containing live client frames indexed by clientNumber 
-        private ConcurrentDictionary<int, Frame> sourceFrames { get; set; }
+        // shared variable with OpenGL window containing live client frames indexed by clientNumber
+        private SourceCollection sources { get; set; }
         // also indexed by clientNumber
         private Dictionary<int, SourcePosition> SourceOverrides = new Dictionary<int, SourcePosition>();
 
-        public void setSourceFrameDict(ConcurrentDictionary<int, Frame> _sourceFrames)
+        public void setSourceCollection(SourceCollection _sources)
         {
-            sourceFrames = _sourceFrames;
+            if(sources != null)
+                sources.SourceDisconnected -= ResetSource;
+            sources = _sources;
+            sources.SourceDisconnected += new SourceDisconnectedEventHandler(ResetSource);
         }
 
         // degrees about origin for arbitrary client number, defines DEFAULT BEHAVIOUR prior to override
         private float GetDefaultRotationDegrees(int sourceID)
         {
-            var list = new List<int>(sourceFrames.Keys);
+            var list = new List<int>(sources.SourceIDs);
             list.Sort();
 
-            return (list.IndexOf(sourceID) / sourceFrames.Count) * 360;
+            return (list.IndexOf(sourceID) / sources.Count) * 360;
         }
 
         // generate rotation transformation for arbitrary client using default rotation DEFAULT BEHAVIOUR
@@ -61,7 +65,7 @@ namespace KinectServer
         // get display ready transform for given client, generates either DEFAULT or OVERRIDE transform matrix
         public AffineTransform GetSourceTransform(int sourceID)
         {
-            if (!sourceFrames.ContainsKey(sourceID)) {
+            if (!sources.SourceIDs.Contains(sourceID)) {
                 throw new IndexOutOfRangeException($"client {sourceID} not found in frame storage");
             }
 

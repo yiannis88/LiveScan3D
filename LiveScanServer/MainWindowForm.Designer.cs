@@ -83,6 +83,13 @@
             this.tableLayoutPanel5 = new System.Windows.Forms.TableLayoutPanel();
             this.label8 = new System.Windows.Forms.Label();
             this.ueConnectedLabel = new System.Windows.Forms.Label();
+            this.label13 = new System.Windows.Forms.Label();
+            this.cleanerFrequencyLabel = new System.Windows.Forms.Label();
+            this.label15 = new System.Windows.Forms.Label();
+            this.cleanerIntervalPicker = new System.Windows.Forms.NumericUpDown();
+            this.btStartCleaner = new System.Windows.Forms.Button();
+            this.cleanerThresholdPicker = new System.Windows.Forms.NumericUpDown();
+            this.label16 = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ueTCPPicker)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TCPPicker)).BeginInit();
@@ -99,6 +106,8 @@
             this.tableLayoutPanel4.SuspendLayout();
             this.groupBox5.SuspendLayout();
             this.tableLayoutPanel5.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.cleanerIntervalPicker)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.cleanerThresholdPicker)).BeginInit();
             this.SuspendLayout();
             // 
             // btStart
@@ -154,7 +163,7 @@
             // btShowLive
             // 
             this.btShowLive.Enabled = false;
-            this.btShowLive.Location = new System.Drawing.Point(12, 154);
+            this.btShowLive.Location = new System.Drawing.Point(12, 184);
             this.btShowLive.Name = "btShowLive";
             this.btShowLive.Size = new System.Drawing.Size(95, 23);
             this.btShowLive.TabIndex = 5;
@@ -166,7 +175,7 @@
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.statusLabel});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 372);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 412);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(603, 22);
             this.statusStrip1.TabIndex = 6;
@@ -190,7 +199,7 @@
             // 
             this.lbSeqName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lbSeqName.AutoSize = true;
-            this.lbSeqName.Location = new System.Drawing.Point(381, 145);
+            this.lbSeqName.Location = new System.Drawing.Point(381, 197);
             this.lbSeqName.Name = "lbSeqName";
             this.lbSeqName.Size = new System.Drawing.Size(85, 13);
             this.lbSeqName.TabIndex = 8;
@@ -199,7 +208,7 @@
             // txtSeqName
             // 
             this.txtSeqName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtSeqName.Location = new System.Drawing.Point(472, 142);
+            this.txtSeqName.Location = new System.Drawing.Point(472, 194);
             this.txtSeqName.MaxLength = 40;
             this.txtSeqName.Name = "txtSeqName";
             this.txtSeqName.Size = new System.Drawing.Size(119, 20);
@@ -208,7 +217,7 @@
             // 
             // btDebug
             // 
-            this.btDebug.Location = new System.Drawing.Point(117, 154);
+            this.btDebug.Location = new System.Drawing.Point(117, 155);
             this.btDebug.Name = "btDebug";
             this.btDebug.Size = new System.Drawing.Size(105, 23);
             this.btDebug.TabIndex = 10;
@@ -251,7 +260,7 @@
             // ueTCPPicker
             // 
             this.ueTCPPicker.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.ueTCPPicker.Location = new System.Drawing.Point(472, 116);
+            this.ueTCPPicker.Location = new System.Drawing.Point(472, 168);
             this.ueTCPPicker.Maximum = new decimal(new int[] {
             10,
             0,
@@ -276,7 +285,7 @@
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(358, 118);
+            this.label1.Location = new System.Drawing.Point(358, 170);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(108, 13);
             this.label1.TabIndex = 22;
@@ -285,7 +294,7 @@
             // TCPPicker
             // 
             this.TCPPicker.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.TCPPicker.Location = new System.Drawing.Point(472, 90);
+            this.TCPPicker.Location = new System.Drawing.Point(472, 142);
             this.TCPPicker.Maximum = new decimal(new int[] {
             5,
             0,
@@ -310,7 +319,7 @@
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(376, 92);
+            this.label2.Location = new System.Drawing.Point(376, 144);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(90, 13);
             this.label2.TabIndex = 24;
@@ -319,7 +328,7 @@
             // rxBufferHoldPicker
             // 
             this.rxBufferHoldPicker.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.rxBufferHoldPicker.Location = new System.Drawing.Point(472, 64);
+            this.rxBufferHoldPicker.Location = new System.Drawing.Point(472, 116);
             this.rxBufferHoldPicker.Maximum = new decimal(new int[] {
             5000,
             0,
@@ -344,7 +353,7 @@
             // 
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(361, 66);
+            this.label3.Location = new System.Drawing.Point(361, 118);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(105, 13);
             this.label3.TabIndex = 26;
@@ -415,8 +424,10 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox1.Controls.Add(this.tableLayoutPanel1);
-            this.groupBox1.Location = new System.Drawing.Point(12, 183);
+            this.groupBox1.Location = new System.Drawing.Point(12, 223);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(186, 85);
             this.groupBox1.TabIndex = 31;
@@ -495,8 +506,10 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox2.Controls.Add(this.tableLayoutPanel2);
-            this.groupBox2.Location = new System.Drawing.Point(204, 183);
+            this.groupBox2.Location = new System.Drawing.Point(204, 223);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(186, 85);
             this.groupBox2.TabIndex = 32;
@@ -575,8 +588,10 @@
             // 
             // groupBox3
             // 
+            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox3.Controls.Add(this.tableLayoutPanel3);
-            this.groupBox3.Location = new System.Drawing.Point(396, 183);
+            this.groupBox3.Location = new System.Drawing.Point(396, 223);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(186, 85);
             this.groupBox3.TabIndex = 33;
@@ -591,15 +606,18 @@
             this.tableLayoutPanel3.ColumnCount = 2;
             this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30F));
             this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70F));
+            this.tableLayoutPanel3.Controls.Add(this.label13, 0, 2);
             this.tableLayoutPanel3.Controls.Add(this.liveFrequencyLabel, 1, 1);
             this.tableLayoutPanel3.Controls.Add(this.label11, 0, 1);
             this.tableLayoutPanel3.Controls.Add(this.label12, 0, 0);
             this.tableLayoutPanel3.Controls.Add(this.rxFrequencyLabel, 1, 0);
+            this.tableLayoutPanel3.Controls.Add(this.cleanerFrequencyLabel, 1, 2);
             this.tableLayoutPanel3.Location = new System.Drawing.Point(6, 19);
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
-            this.tableLayoutPanel3.RowCount = 2;
+            this.tableLayoutPanel3.RowCount = 3;
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tableLayoutPanel3.Size = new System.Drawing.Size(174, 60);
             this.tableLayoutPanel3.TabIndex = 0;
             // 
@@ -609,9 +627,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.liveFrequencyLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.liveFrequencyLabel.Location = new System.Drawing.Point(55, 30);
+            this.liveFrequencyLabel.Location = new System.Drawing.Point(55, 20);
             this.liveFrequencyLabel.Name = "liveFrequencyLabel";
-            this.liveFrequencyLabel.Size = new System.Drawing.Size(116, 30);
+            this.liveFrequencyLabel.Size = new System.Drawing.Size(116, 20);
             this.liveFrequencyLabel.TabIndex = 3;
             this.liveFrequencyLabel.Text = "0 Hz";
             this.liveFrequencyLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -621,9 +639,9 @@
             this.label11.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label11.Location = new System.Drawing.Point(3, 30);
+            this.label11.Location = new System.Drawing.Point(3, 20);
             this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(46, 30);
+            this.label11.Size = new System.Drawing.Size(46, 20);
             this.label11.TabIndex = 2;
             this.label11.Text = "Live";
             this.label11.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -635,7 +653,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label12.Location = new System.Drawing.Point(3, 0);
             this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(46, 30);
+            this.label12.Size = new System.Drawing.Size(46, 20);
             this.label12.TabIndex = 1;
             this.label12.Text = "Rx";
             this.label12.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -648,15 +666,17 @@
             this.rxFrequencyLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rxFrequencyLabel.Location = new System.Drawing.Point(55, 0);
             this.rxFrequencyLabel.Name = "rxFrequencyLabel";
-            this.rxFrequencyLabel.Size = new System.Drawing.Size(116, 30);
+            this.rxFrequencyLabel.Size = new System.Drawing.Size(116, 20);
             this.rxFrequencyLabel.TabIndex = 0;
             this.rxFrequencyLabel.Text = "0 Hz";
             this.rxFrequencyLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // groupBox4
             // 
+            this.groupBox4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox4.Controls.Add(this.tableLayoutPanel4);
-            this.groupBox4.Location = new System.Drawing.Point(12, 274);
+            this.groupBox4.Location = new System.Drawing.Point(12, 314);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(186, 85);
             this.groupBox4.TabIndex = 32;
@@ -721,8 +741,10 @@
             // 
             // groupBox5
             // 
+            this.groupBox5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox5.Controls.Add(this.tableLayoutPanel5);
-            this.groupBox5.Location = new System.Drawing.Point(204, 274);
+            this.groupBox5.Location = new System.Drawing.Point(204, 314);
             this.groupBox5.Name = "groupBox5";
             this.groupBox5.Size = new System.Drawing.Size(186, 85);
             this.groupBox5.TabIndex = 33;
@@ -772,11 +794,119 @@
             this.ueConnectedLabel.Text = "False";
             this.ueConnectedLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // label13
+            // 
+            this.label13.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label13.Location = new System.Drawing.Point(3, 40);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(46, 20);
+            this.label13.TabIndex = 4;
+            this.label13.Text = "Cleaner";
+            this.label13.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // cleanerFrequencyLabel
+            // 
+            this.cleanerFrequencyLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.cleanerFrequencyLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cleanerFrequencyLabel.Location = new System.Drawing.Point(55, 40);
+            this.cleanerFrequencyLabel.Name = "cleanerFrequencyLabel";
+            this.cleanerFrequencyLabel.Size = new System.Drawing.Size(116, 20);
+            this.cleanerFrequencyLabel.TabIndex = 5;
+            this.cleanerFrequencyLabel.Text = "0 Hz";
+            this.cleanerFrequencyLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // label15
+            // 
+            this.label15.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label15.AutoSize = true;
+            this.label15.Location = new System.Drawing.Point(363, 66);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(103, 13);
+            this.label15.TabIndex = 35;
+            this.label15.Text = "Cleaner Interval [ms]";
+            // 
+            // cleanerIntervalPicker
+            // 
+            this.cleanerIntervalPicker.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cleanerIntervalPicker.Location = new System.Drawing.Point(472, 64);
+            this.cleanerIntervalPicker.Maximum = new decimal(new int[] {
+            100000,
+            0,
+            0,
+            0});
+            this.cleanerIntervalPicker.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.cleanerIntervalPicker.Name = "cleanerIntervalPicker";
+            this.cleanerIntervalPicker.Size = new System.Drawing.Size(119, 20);
+            this.cleanerIntervalPicker.TabIndex = 34;
+            this.cleanerIntervalPicker.Value = new decimal(new int[] {
+            5000,
+            0,
+            0,
+            0});
+            this.cleanerIntervalPicker.ValueChanged += new System.EventHandler(this.cleanerIntervalPicker_ValueChanged);
+            // 
+            // btStartCleaner
+            // 
+            this.btStartCleaner.Location = new System.Drawing.Point(12, 155);
+            this.btStartCleaner.Name = "btStartCleaner";
+            this.btStartCleaner.Size = new System.Drawing.Size(95, 23);
+            this.btStartCleaner.TabIndex = 36;
+            this.btStartCleaner.Text = "Start Cleaner";
+            this.btStartCleaner.UseVisualStyleBackColor = true;
+            this.btStartCleaner.Click += new System.EventHandler(this.btStartCleaner_Click);
+            // 
+            // cleanerThresholdPicker
+            // 
+            this.cleanerThresholdPicker.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cleanerThresholdPicker.Location = new System.Drawing.Point(472, 90);
+            this.cleanerThresholdPicker.Maximum = new decimal(new int[] {
+            100000,
+            0,
+            0,
+            0});
+            this.cleanerThresholdPicker.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.cleanerThresholdPicker.Name = "cleanerThresholdPicker";
+            this.cleanerThresholdPicker.Size = new System.Drawing.Size(119, 20);
+            this.cleanerThresholdPicker.TabIndex = 34;
+            this.cleanerThresholdPicker.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.cleanerThresholdPicker.ValueChanged += new System.EventHandler(this.cleanerThresholdPicker_ValueChanged);
+            // 
+            // label16
+            // 
+            this.label16.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label16.AutoSize = true;
+            this.label16.Location = new System.Drawing.Point(359, 92);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(107, 13);
+            this.label16.TabIndex = 35;
+            this.label16.Text = "Cleaner Threshold [s]";
+            // 
             // MainWindowForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(603, 394);
+            this.ClientSize = new System.Drawing.Size(603, 434);
+            this.Controls.Add(this.btStartCleaner);
+            this.Controls.Add(this.label16);
+            this.Controls.Add(this.label15);
+            this.Controls.Add(this.cleanerThresholdPicker);
+            this.Controls.Add(this.cleanerIntervalPicker);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
@@ -826,6 +956,8 @@
             this.tableLayoutPanel4.ResumeLayout(false);
             this.groupBox5.ResumeLayout(false);
             this.tableLayoutPanel5.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.cleanerIntervalPicker)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.cleanerThresholdPicker)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -888,6 +1020,13 @@
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel5;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label ueConnectedLabel;
+        private System.Windows.Forms.Label label13;
+        private System.Windows.Forms.Label cleanerFrequencyLabel;
+        private System.Windows.Forms.Label label15;
+        private System.Windows.Forms.NumericUpDown cleanerIntervalPicker;
+        private System.Windows.Forms.Button btStartCleaner;
+        private System.Windows.Forms.NumericUpDown cleanerThresholdPicker;
+        private System.Windows.Forms.Label label16;
     }
 }
 
