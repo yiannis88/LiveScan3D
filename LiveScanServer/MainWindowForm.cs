@@ -141,6 +141,7 @@ namespace KinectServer
                 btShowLive.Enabled = true;
 
                 sources.StartCleaner();
+                updateCleanerButtonText();
 
                 if (!updateWorker.IsBusy)
                     updateWorker.RunWorkerAsync();
@@ -155,7 +156,9 @@ namespace KinectServer
             {
                 oServer.StopServer();
                 oTransferServer.StopServer();
+                
                 sources.Reset();
+                updateCleanerButtonText();
 
                 btStart.Text = "Start server";
                 TCPPicker.Enabled = true;
@@ -608,6 +611,17 @@ namespace KinectServer
                 logInformationPtr.RedirectOutput("At " + DateTime.Now.ToString("hh.mm.ss.fff") + " Number of TCP connections (UE) is set to: " + tcpConnectionsNumUe);
         }
 
+        private void cleanerIntervalPicker_ValueChanged(object sender, EventArgs e)
+        {
+            sources.CleanerInterval = (int) cleanerIntervalPicker.Value;
+            updateCleanerFrequency();
+        }
+
+        private void cleanerThresholdPicker_ValueChanged(object sender, EventArgs e)
+        {
+            sources.CleanerThreshold = (int) cleanerThresholdPicker.Value;
+        }
+
         private void btDebug_Click(object sender, EventArgs e)
         {
             bDebugOption = !bDebugOption;
@@ -678,6 +692,30 @@ namespace KinectServer
                 OpenGLWorker.RunWorkerAsync();
         }
 
+        private void btStartCleaner_Click(object sender, EventArgs e)
+        {
+            if (sources.IsCleaning)
+            {
+                sources.StopCleaner();
+            }else
+            {
+                sources.StartCleaner();
+            }
+            updateCleanerButtonText();
+        }
+
+        private void updateCleanerButtonText()
+        {
+            if (sources.IsCleaning)
+            {
+                btStartCleaner.Text = "Stop Cleaner";
+            }
+            else
+            {
+                btStartCleaner.Text = "Start Cleaner";
+            }
+        }
+
         private void SetStatusBarOnTimer(string message, int milliseconds)
         {
             statusLabel.Text = message;
@@ -713,6 +751,7 @@ namespace KinectServer
         {
             updateRxFrequency();
             updateLiveFrequency();
+            updateCleanerFrequency();
         }
 
         private void bufferStats_DoWork(object sender, DoWorkEventArgs e)
@@ -782,13 +821,19 @@ namespace KinectServer
         private void updateRxFrequency()
         {
             double rxFreq = Math.Round(1/ (((double) reqDelayClient) / 1000), 2);
-            rxFrequencyLabel.Text = $"{rxFreq}Hz";
+            rxFrequencyLabel.Text = $"{rxFreq} Hz";
         }
 
         private void updateLiveFrequency()
         {
             double liveFreq = Math.Round(1 / (((double) showLiveDelay) / 1000), 2);
-            liveFrequencyLabel.Text = $"{liveFreq}Hz";
+            liveFrequencyLabel.Text = $"{liveFreq} Hz";
+        }
+
+        private void updateCleanerFrequency()
+        {
+            double cleanerFreq = Math.Round(1 / (((double) sources.CleanerInterval) / 1000), 2);
+            cleanerFrequencyLabel.Text = $"{cleanerFreq} Hz";
         }
     }
 }

@@ -120,7 +120,7 @@ namespace KinectServer
         {
             get
             {
-                return cleanerThread != null && cleanerThread.IsAlive;
+                return cleanerThread != null && cleanerThread.IsAlive && !cleanerToCancel;
             }
         }
 

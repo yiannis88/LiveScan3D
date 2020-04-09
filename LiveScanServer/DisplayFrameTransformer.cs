@@ -37,7 +37,10 @@ namespace KinectServer
 
         public void setSourceCollection(SourceCollection _sources)
         {
+            if(sources != null)
+                sources.SourceDisconnected -= ResetSource;
             sources = _sources;
+            sources.SourceDisconnected += new SourceDisconnectedEventHandler(ResetSource);
         }
 
         // degrees about origin for arbitrary client number, defines DEFAULT BEHAVIOUR prior to override
