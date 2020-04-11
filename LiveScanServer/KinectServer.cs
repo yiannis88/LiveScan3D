@@ -113,6 +113,14 @@ namespace KinectServer
         private double globalFps = 0; // we could use of any moving average to calculate this (see my other work on ns-3 and the EMA schemes), but for the time being it is calculated per second
         private float txStep = 0; // the value sent to the clients
 
+        public float TxStep
+        {
+            get
+            {
+                return txStep;
+            }
+        }
+
         /**
          * This function is called in MainWindowForm::btRecord_Click () where at least one
          * client needs to be connected to tstart recording and in the MainWindowForm::btRefineCalib_Click()
@@ -927,7 +935,6 @@ namespace KinectServer
                 {
                     txStep = (float)((stepAlgorithm == 0) ? (globalFps - fpsRequirement) / globalFps : stepAlgorithm); // cast it to float to use 32-bit
                 }
-                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " txStep " + txStep);
             }
         }
 

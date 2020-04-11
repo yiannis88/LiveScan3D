@@ -901,6 +901,10 @@ namespace KinectServer
                 ueConnectedLabel.Invoke((MethodInvoker)delegate {
                     ueConnectedLabel.Text = oTransferServer.UesCurrentlyConnected().ToString();
                 });
+
+                currentStepLabel.Invoke((MethodInvoker)delegate {
+                    currentStepLabel.Text = oServer.TxStep.ToString();
+                });
             }
 
             rxBandwidthLabel.Invoke((MethodInvoker)delegate {
@@ -926,6 +930,10 @@ namespace KinectServer
 
             ueConnectedLabel.Invoke((MethodInvoker)delegate {
                 ueConnectedLabel.Text = "False";
+            });
+
+            currentStepLabel.Invoke((MethodInvoker)delegate {
+                currentStepLabel.Text = "0.0";
             });
         }
 

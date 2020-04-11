@@ -74,10 +74,12 @@
             this.liveBufferLabel = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
+            this.label13 = new System.Windows.Forms.Label();
             this.liveFrequencyLabel = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.rxFrequencyLabel = new System.Windows.Forms.Label();
+            this.cleanerFrequencyLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel4 = new System.Windows.Forms.TableLayoutPanel();
             this.sourceListLabel = new System.Windows.Forms.Label();
@@ -87,13 +89,15 @@
             this.tableLayoutPanel5 = new System.Windows.Forms.TableLayoutPanel();
             this.label8 = new System.Windows.Forms.Label();
             this.ueConnectedLabel = new System.Windows.Forms.Label();
-            this.label13 = new System.Windows.Forms.Label();
-            this.cleanerFrequencyLabel = new System.Windows.Forms.Label();
             this.label15 = new System.Windows.Forms.Label();
             this.cleanerIntervalPicker = new System.Windows.Forms.NumericUpDown();
             this.btStartCleaner = new System.Windows.Forms.Button();
             this.cleanerThresholdPicker = new System.Windows.Forms.NumericUpDown();
             this.label16 = new System.Windows.Forms.Label();
+            this.groupBox6 = new System.Windows.Forms.GroupBox();
+            this.tableLayoutPanel6 = new System.Windows.Forms.TableLayoutPanel();
+            this.label17 = new System.Windows.Forms.Label();
+            this.currentStepLabel = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ueTCPPicker)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TCPPicker)).BeginInit();
@@ -112,6 +116,8 @@
             this.tableLayoutPanel5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.cleanerIntervalPicker)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.cleanerThresholdPicker)).BeginInit();
+            this.groupBox6.SuspendLayout();
+            this.tableLayoutPanel6.SuspendLayout();
             this.SuspendLayout();
             // 
             // btStart
@@ -235,11 +241,10 @@
             this.recordingWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.recordingWorker_DoWork);
             this.recordingWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.recordingWorker_RunWorkerCompleted);
             // 
-            // 
-            // DropFramesDev
+            // dropFramesDevLatency
             // 
             this.dropFramesDevLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.dropFramesDevLatency.Location = new System.Drawing.Point(346, 129);
+            this.dropFramesDevLatency.Location = new System.Drawing.Point(117, 186);
             this.dropFramesDevLatency.MaxLength = 4;
             this.dropFramesDevLatency.Name = "dropFramesDevLatency";
             this.dropFramesDevLatency.Size = new System.Drawing.Size(35, 20);
@@ -248,20 +253,11 @@
             this.dropFramesDevLatency.TextChanged += new System.EventHandler(this.dropFramesDevLatency_TextChanged);
             this.dropFramesDevLatency.Enter += new System.EventHandler(this.dropFramesDevLatency_enter);
             this.dropFramesDevLatency.Leave += new System.EventHandler(this.dropFramesDevLatency_leave);
-            ///////////// 2nd requirement /////////////
-            this.dropFramesDevFps.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.dropFramesDevFps.Location = new System.Drawing.Point(386, 129);
-            this.dropFramesDevFps.MaxLength = 4;
-            this.dropFramesDevFps.Name = "dropFramesDevFps";
-            this.dropFramesDevFps.Size = new System.Drawing.Size(35, 20);
-            this.dropFramesDevFps.TabIndex = 20;
-            this.dropFramesDevFps.Text = "FPS";
-            this.dropFramesDevFps.TextChanged += new System.EventHandler(this.dropFramesDevFps_TextChanged);
-            this.dropFramesDevFps.Enter += new System.EventHandler(this.dropFramesDevFps_enter);
-            this.dropFramesDevFps.Leave += new System.EventHandler(this.dropFramesDevFps_leave);
-            ///////////// 3rd parameter algorithm step /////////////
+            // 
+            // dropFramesDevStep
+            // 
             this.dropFramesDevStep.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.dropFramesDevStep.Location = new System.Drawing.Point(426, 129);
+            this.dropFramesDevStep.Location = new System.Drawing.Point(197, 186);
             this.dropFramesDevStep.MaxLength = 4;
             this.dropFramesDevStep.Name = "dropFramesDevStep";
             this.dropFramesDevStep.Size = new System.Drawing.Size(35, 20);
@@ -271,16 +267,29 @@
             this.dropFramesDevStep.Enter += new System.EventHandler(this.dropFramesDevStep_enter);
             this.dropFramesDevStep.Leave += new System.EventHandler(this.dropFramesDevStep_leave);
             // 
+            // dropFramesDevFps
+            // 
+            this.dropFramesDevFps.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.dropFramesDevFps.Location = new System.Drawing.Point(157, 186);
+            this.dropFramesDevFps.MaxLength = 4;
+            this.dropFramesDevFps.Name = "dropFramesDevFps";
+            this.dropFramesDevFps.Size = new System.Drawing.Size(35, 20);
+            this.dropFramesDevFps.TabIndex = 20;
+            this.dropFramesDevFps.Text = "FPS";
+            this.dropFramesDevFps.TextChanged += new System.EventHandler(this.dropFramesDevFps_TextChanged);
+            this.dropFramesDevFps.Enter += new System.EventHandler(this.dropFramesDevFps_enter);
+            this.dropFramesDevFps.Leave += new System.EventHandler(this.dropFramesDevFps_leave);
+            // 
             // btDropFramesDev
             // 
-            this.btDropFramesDev.Location = new System.Drawing.Point(472, 129);
+            this.btDropFramesDev.Location = new System.Drawing.Point(238, 184);
             this.btDropFramesDev.Name = "btDropFramesDev";
             this.btDropFramesDev.Size = new System.Drawing.Size(116, 23);
             this.btDropFramesDev.TabIndex = 22;
             this.btDropFramesDev.Text = "Requirements";
             this.btDropFramesDev.UseVisualStyleBackColor = true;
             this.btDropFramesDev.Click += new System.EventHandler(this.btDropFramesDev_Click);
-            //
+            // 
             // OpenGLWorker
             // 
             this.OpenGLWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.OpenGLWorker_DoWork);
@@ -671,6 +680,18 @@
             this.tableLayoutPanel3.Size = new System.Drawing.Size(174, 60);
             this.tableLayoutPanel3.TabIndex = 0;
             // 
+            // label13
+            // 
+            this.label13.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label13.Location = new System.Drawing.Point(3, 40);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(46, 20);
+            this.label13.TabIndex = 4;
+            this.label13.Text = "Cleaner";
+            this.label13.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // liveFrequencyLabel
             // 
             this.liveFrequencyLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -720,6 +741,19 @@
             this.rxFrequencyLabel.TabIndex = 0;
             this.rxFrequencyLabel.Text = "0 Hz";
             this.rxFrequencyLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // cleanerFrequencyLabel
+            // 
+            this.cleanerFrequencyLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.cleanerFrequencyLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cleanerFrequencyLabel.Location = new System.Drawing.Point(55, 40);
+            this.cleanerFrequencyLabel.Name = "cleanerFrequencyLabel";
+            this.cleanerFrequencyLabel.Size = new System.Drawing.Size(116, 20);
+            this.cleanerFrequencyLabel.TabIndex = 5;
+            this.cleanerFrequencyLabel.Text = "0 Hz";
+            this.cleanerFrequencyLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // groupBox4
             // 
@@ -844,31 +878,6 @@
             this.ueConnectedLabel.Text = "False";
             this.ueConnectedLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // label13
-            // 
-            this.label13.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label13.Location = new System.Drawing.Point(3, 40);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(46, 20);
-            this.label13.TabIndex = 4;
-            this.label13.Text = "Cleaner";
-            this.label13.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // cleanerFrequencyLabel
-            // 
-            this.cleanerFrequencyLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.cleanerFrequencyLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cleanerFrequencyLabel.Location = new System.Drawing.Point(55, 40);
-            this.cleanerFrequencyLabel.Name = "cleanerFrequencyLabel";
-            this.cleanerFrequencyLabel.Size = new System.Drawing.Size(116, 20);
-            this.cleanerFrequencyLabel.TabIndex = 5;
-            this.cleanerFrequencyLabel.Text = "0 Hz";
-            this.cleanerFrequencyLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
             // label15
             // 
             this.label15.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -947,6 +956,60 @@
             this.label16.TabIndex = 35;
             this.label16.Text = "Cleaner Threshold [s]";
             // 
+            // groupBox6
+            // 
+            this.groupBox6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox6.Controls.Add(this.tableLayoutPanel6);
+            this.groupBox6.Location = new System.Drawing.Point(396, 314);
+            this.groupBox6.Name = "groupBox6";
+            this.groupBox6.Size = new System.Drawing.Size(186, 85);
+            this.groupBox6.TabIndex = 33;
+            this.groupBox6.TabStop = false;
+            this.groupBox6.Text = "Dynamic Step";
+            // 
+            // tableLayoutPanel6
+            // 
+            this.tableLayoutPanel6.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tableLayoutPanel6.ColumnCount = 2;
+            this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel6.Controls.Add(this.label17, 0, 0);
+            this.tableLayoutPanel6.Controls.Add(this.currentStepLabel, 1, 0);
+            this.tableLayoutPanel6.Location = new System.Drawing.Point(6, 19);
+            this.tableLayoutPanel6.Name = "tableLayoutPanel6";
+            this.tableLayoutPanel6.RowCount = 1;
+            this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel6.Size = new System.Drawing.Size(174, 60);
+            this.tableLayoutPanel6.TabIndex = 0;
+            // 
+            // label17
+            // 
+            this.label17.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label17.Location = new System.Drawing.Point(3, 0);
+            this.label17.Name = "label17";
+            this.label17.Size = new System.Drawing.Size(81, 60);
+            this.label17.TabIndex = 2;
+            this.label17.Text = "Current Step";
+            this.label17.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // currentStepLabel
+            // 
+            this.currentStepLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.currentStepLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.currentStepLabel.Location = new System.Drawing.Point(90, 0);
+            this.currentStepLabel.Name = "currentStepLabel";
+            this.currentStepLabel.Size = new System.Drawing.Size(81, 60);
+            this.currentStepLabel.TabIndex = 3;
+            this.currentStepLabel.Text = "0.0";
+            this.currentStepLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // MainWindowForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -957,6 +1020,7 @@
             this.Controls.Add(this.label15);
             this.Controls.Add(this.cleanerThresholdPicker);
             this.Controls.Add(this.cleanerIntervalPicker);
+            this.Controls.Add(this.groupBox6);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
@@ -1012,6 +1076,8 @@
             this.tableLayoutPanel5.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.cleanerIntervalPicker)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.cleanerThresholdPicker)).EndInit();
+            this.groupBox6.ResumeLayout(false);
+            this.tableLayoutPanel6.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1085,6 +1151,10 @@
         private System.Windows.Forms.Button btStartCleaner;
         private System.Windows.Forms.NumericUpDown cleanerThresholdPicker;
         private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.GroupBox groupBox6;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel6;
+        private System.Windows.Forms.Label label17;
+        private System.Windows.Forms.Label currentStepLabel;
     }
 }
 
