@@ -1,5 +1,5 @@
 ﻿/**
-* This class has been created to hold all the information stored in the TX buffer at the server. 
+* This class has been created to hold all information stored in the TX buffer at the server. 
 * It creates a list of objects when enqueueing; the frame ready for transmission and the enqueued timestamp
 *                                          
 * Ioannis Selinis 2019 (5GIC, University of Surrey)                                           

@@ -49,6 +49,10 @@
             this.btHoldRxFrames = new System.Windows.Forms.Button();
             this.tcpConnections = new System.Windows.Forms.TextBox();
             this.btTcpConnections = new System.Windows.Forms.Button();
+            this.dropFramesDevLatency = new System.Windows.Forms.TextBox();
+            this.dropFramesDevStep = new System.Windows.Forms.TextBox();
+            this.dropFramesDevFps = new System.Windows.Forms.TextBox();
+            this.btDropFramesDev = new System.Windows.Forms.Button();
             this.tcpConnectionsUe = new System.Windows.Forms.TextBox();
             this.btTcpConnectionsUe = new System.Windows.Forms.Button();
             this.OpenGLWorker = new System.ComponentModel.BackgroundWorker();
@@ -266,6 +270,51 @@
             this.btTcpConnections.UseVisualStyleBackColor = true;
             this.btTcpConnections.Click += new System.EventHandler(this.btTcpConnections_Click);
             // 
+            // DropFramesDev
+            // 
+            this.dropFramesDevLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.dropFramesDevLatency.Location = new System.Drawing.Point(346, 129);
+            this.dropFramesDevLatency.MaxLength = 4;
+            this.dropFramesDevLatency.Name = "dropFramesDevLatency";
+            this.dropFramesDevLatency.Size = new System.Drawing.Size(35, 20);
+            this.dropFramesDevLatency.TabIndex = 19;
+            this.dropFramesDevLatency.Text = "Lat";
+            this.dropFramesDevLatency.TextChanged += new System.EventHandler(this.dropFramesDevLatency_TextChanged);
+            this.dropFramesDevLatency.Enter += new System.EventHandler(this.dropFramesDevLatency_enter);
+            this.dropFramesDevLatency.Leave += new System.EventHandler(this.dropFramesDevLatency_leave);
+            ///////////// 2nd requirement /////////////
+            this.dropFramesDevFps.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.dropFramesDevFps.Location = new System.Drawing.Point(386, 129);
+            this.dropFramesDevFps.MaxLength = 4;
+            this.dropFramesDevFps.Name = "dropFramesDevFps";
+            this.dropFramesDevFps.Size = new System.Drawing.Size(35, 20);
+            this.dropFramesDevFps.TabIndex = 20;
+            this.dropFramesDevFps.Text = "FPS";
+            this.dropFramesDevFps.TextChanged += new System.EventHandler(this.dropFramesDevFps_TextChanged);
+            this.dropFramesDevFps.Enter += new System.EventHandler(this.dropFramesDevFps_enter);
+            this.dropFramesDevFps.Leave += new System.EventHandler(this.dropFramesDevFps_leave);
+            ///////////// 3rd parameter algorithm step /////////////
+            this.dropFramesDevStep.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.dropFramesDevStep.Location = new System.Drawing.Point(426, 129);
+            this.dropFramesDevStep.MaxLength = 4;
+            this.dropFramesDevStep.Name = "dropFramesDevStep";
+            this.dropFramesDevStep.Size = new System.Drawing.Size(35, 20);
+            this.dropFramesDevStep.TabIndex = 21;
+            this.dropFramesDevStep.Text = "Step";
+            this.dropFramesDevStep.TextChanged += new System.EventHandler(this.dropFramesDevStep_TextChanged);
+            this.dropFramesDevStep.Enter += new System.EventHandler(this.dropFramesDevStep_enter);
+            this.dropFramesDevStep.Leave += new System.EventHandler(this.dropFramesDevStep_leave);
+            // 
+            // btTcpConnections
+            // 
+            this.btDropFramesDev.Location = new System.Drawing.Point(472, 129);
+            this.btDropFramesDev.Name = "btDropFramesDev";
+            this.btDropFramesDev.Size = new System.Drawing.Size(116, 23);
+            this.btDropFramesDev.TabIndex = 22;
+            this.btDropFramesDev.Text = "Requirements";
+            this.btDropFramesDev.UseVisualStyleBackColor = true;
+            this.btDropFramesDev.Click += new System.EventHandler(this.btDropFramesDev_Click);
+            // 
             // tcpConnectionsUe
             // 
             this.tcpConnectionsUe.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
@@ -273,7 +322,7 @@
             this.tcpConnectionsUe.MaxLength = 10;
             this.tcpConnectionsUe.Name = "tcpConnectionsUe";
             this.tcpConnectionsUe.Size = new System.Drawing.Size(116, 20);
-            this.tcpConnectionsUe.TabIndex = 19;
+            this.tcpConnectionsUe.TabIndex = 23;
             this.tcpConnectionsUe.Text = "TCP connections UE";
             this.tcpConnectionsUe.Enter += new System.EventHandler(this.tcpConnectionsUe_enter);
             this.tcpConnectionsUe.Leave += new System.EventHandler(this.tcpConnectionsUe_leave);
@@ -283,7 +332,7 @@
             this.btTcpConnectionsUe.Location = new System.Drawing.Point(472, 157);
             this.btTcpConnectionsUe.Name = "btTcpConnectionsUe";
             this.btTcpConnectionsUe.Size = new System.Drawing.Size(116, 23);
-            this.btTcpConnectionsUe.TabIndex = 20;
+            this.btTcpConnectionsUe.TabIndex = 24;
             this.btTcpConnectionsUe.Text = "TCP connections UE";
             this.btTcpConnectionsUe.UseVisualStyleBackColor = true;
             this.btTcpConnectionsUe.Click += new System.EventHandler(this.btTcpConnectionsUe_Click);
@@ -333,6 +382,10 @@
             this.Controls.Add(this.btHoldRxFrames);
             this.Controls.Add(this.tcpConnections);
             this.Controls.Add(this.btTcpConnections);
+            this.Controls.Add(this.dropFramesDevLatency);
+            this.Controls.Add(this.dropFramesDevFps);
+            this.Controls.Add(this.dropFramesDevStep);
+            this.Controls.Add(this.btDropFramesDev);
             this.Controls.Add(this.tcpConnectionsUe);
             this.Controls.Add(this.btTcpConnectionsUe);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -369,6 +422,10 @@
         private System.Windows.Forms.Button btHoldRxFrames;
         private System.Windows.Forms.TextBox tcpConnections;
         private System.Windows.Forms.Button btTcpConnections;
+        private System.Windows.Forms.TextBox dropFramesDevLatency;        
+        private System.Windows.Forms.TextBox dropFramesDevFps;
+        private System.Windows.Forms.TextBox dropFramesDevStep;
+        private System.Windows.Forms.Button btDropFramesDev;
         private System.Windows.Forms.TextBox tcpConnectionsUe;
         private System.Windows.Forms.Button btTcpConnectionsUe;
         private System.ComponentModel.BackgroundWorker recordingWorker;                 

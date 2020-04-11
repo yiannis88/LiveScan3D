@@ -564,6 +564,62 @@ namespace KinectServer
             }
         }
 
+        private void btDropFramesDev_Click (object sender, EventArgs e)
+        {
+            //here we want to get the text from the textboxes to set the requirements!
+            if (dropFramesDevLatency.Text.Length > 0 && dropFramesDevLatency.Text != "Lat")
+            {
+                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Alpha");
+                if (Regex.IsMatch(dropFramesDevLatency.Text, @"^\d+$")) // return true if input is all numbers
+                {
+                    try
+                    {
+                        //get the 2nd requirement now
+                        if (dropFramesDevFps.Text.Length > 0 && dropFramesDevFps.Text != "FPS")
+                        {
+                            Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Beta");
+                            if (Regex.IsMatch(dropFramesDevFps.Text, @"^\d+$")) // return true if input is all numbers
+                            {
+                                try
+                                {
+                                    //get the step now, if zero then calculate on the fly, otherwise use the specified step
+                                    Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Ceta");
+                                    if (dropFramesDevStep.Text.Length > 0 && dropFramesDevStep.Text != "Step")
+                                    {
+                                        decimal _number3 = 0;                                        
+                                        if (decimal.TryParse(dropFramesDevStep.Text, out _number3)) // return true if input is all numbers
+                                        {
+                                            Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Delta");
+                                            try
+                                            {
+                                                int latencyRequirement = int.Parse(dropFramesDevLatency.Text);
+                                                int fpsRequirement = int.Parse(dropFramesDevFps.Text);
+                                                double stepAlgorithm = double.Parse(dropFramesDevStep.Text);
+                                                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow [" + latencyRequirement + ", " + fpsRequirement + ", " + stepAlgorithm + "]");
+                                                oServer.SetRequirements(latencyRequirement, fpsRequirement, stepAlgorithm);
+                                            }
+                                            catch(FormatException er)
+                                            {
+                                                Console.WriteLine("Unable to parse the text box (Step) with error {0}.", er.Message);
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (FormatException er)
+                                {
+                                    Console.WriteLine("Unable to parse the text box (FPS Requirement) with error {0}.", er.Message);
+                                }
+                            }
+                        }
+                    }
+                    catch (FormatException er)
+                    {
+                        Console.WriteLine("Unable to parse the text box (Latency Requirement) with error {0}.", er.Message);
+                    }
+                }
+            }
+        }
+
         private void btTcpConnectionsUe_Click(object sender, EventArgs e)
         {
             // here we want to get the text from holdRxFrames textbox
@@ -650,6 +706,33 @@ namespace KinectServer
             }
         }
 
+        private void dropFramesDevLatency_leave (object sender, EventArgs e)
+        {
+            if (dropFramesDevLatency.Text.Length == 0)
+            {
+                dropFramesDevLatency.Text = "Lat";
+                dropFramesDevLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            }
+        }
+
+        private void dropFramesDevFps_leave (object sender, EventArgs e)
+        {
+            if (dropFramesDevFps.Text.Length == 0)
+            {
+                dropFramesDevFps.Text = "FPS";
+                dropFramesDevFps.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            }
+        }
+
+        private void dropFramesDevStep_leave (object sender, EventArgs e)
+        {
+            if (dropFramesDevStep.Text.Length == 0)
+            {
+                dropFramesDevStep.Text = "Step";
+                dropFramesDevStep.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            }
+        }
+
         private void tcpConnectionsUe_leave(object sender, EventArgs e)
         {
             if (tcpConnectionsUe.Text.Length == 0)
@@ -665,6 +748,33 @@ namespace KinectServer
             {
                 tcpConnections.Text = "";
                 tcpConnections.ForeColor = System.Drawing.SystemColors.WindowText;
+            }
+        }
+
+        private void dropFramesDevLatency_enter (object sender, EventArgs e)
+        {
+            if (dropFramesDevLatency.Text == "Lat")
+            {
+                dropFramesDevLatency.Text = "";
+                dropFramesDevLatency.ForeColor = System.Drawing.SystemColors.WindowText;
+            }
+        }
+        
+        private void dropFramesDevFps_enter (object sender, EventArgs e)
+        {
+            if (dropFramesDevFps.Text == "FPS")
+            {
+                dropFramesDevFps.Text = "";
+                dropFramesDevFps.ForeColor = System.Drawing.SystemColors.WindowText;
+            }
+        }
+
+        private void dropFramesDevStep_enter (object sender, EventArgs e)
+        {
+            if (dropFramesDevStep.Text == "Step")
+            {
+                dropFramesDevStep.Text = "";
+                dropFramesDevStep.ForeColor = System.Drawing.SystemColors.WindowText;
             }
         }
 
@@ -789,6 +899,21 @@ namespace KinectServer
         }
 
         private void tcpConnections_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void dropFramesDevLatency_TextChanged (object sender, EventArgs e)
+        {
+
+        }
+
+        private void dropFramesDevFps_TextChanged (object sender, EventArgs e)
+        {
+
+        }
+
+        private void dropFramesDevStep_TextChanged (object sender, EventArgs e)
         {
 
         }

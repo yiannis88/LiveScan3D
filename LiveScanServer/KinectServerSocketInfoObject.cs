@@ -1,5 +1,5 @@
 /**
-* This class has been created to hold all the information with respect to the sockets created with the clients. 
+* This class has been created to hold all information with respect to the sockets created with the clients. 
 * It creates a list of objects (lClientSockets, localPort, remotePort).
 *                                          
 * Ioannis Selinis 2019 (5GIC, University of Surrey)                                           

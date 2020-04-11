@@ -124,7 +124,7 @@ namespace KinectServer
                         }
                     }
                     else
-                        throw new InvalidDataException("TransferSocket Rx error with Buffer number " + buffer[0]);
+                        throw new InvalidDataException("TransferSocket Rx error with _hdrIndicator number " + buffer[0]);
                 }
             }
             catch (Exception ex)

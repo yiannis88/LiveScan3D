@@ -1,5 +1,5 @@
 /**
-* This class has been created to hold all the information stored in the buffer from each client. 
+* This class has been created to hold all information stored in the buffer from each client. 
 * It creates a list of objects (lFrameRGB, lFrameVerts, lBodies, tsArray). This will help us to 
 * sort the list everytime a new frame arrives (or upon request) to avoid synchronisation issues...
 *                                          

@@ -55,6 +55,8 @@
  * 
  * March 14, 2001
  * - First public release.
+ * 
+ * Modified by Ioannis Selinis 2019 (5GIC, University of Surrey)
  */
 
 namespace InternetTime

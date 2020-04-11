@@ -37,6 +37,7 @@
 #include <algorithm>
 
 /**
+ * https://github.com/HowardHinnant/date
  * To use the date/date.h library (since it will be available with the c++ 20) we need to:
  *    1) Download https://github.com/Microsoft/vcpkg
  *    2) Administrator cmd (type cmd in the start menu, then right click run as administrator)
@@ -774,8 +775,13 @@ LiveScanClient::HandleSocketReceived(string received, std::vector<int>& anything
 {
 	auto start = std::chrono::system_clock::now();
 
+	stringstream ss;
+	ss <<" LENGTH " << received.length() << "\t"; //in ms
+
 	for (unsigned int i = 0; i < received.length(); i++)
 	{
+		ss << i << "\t" << (int) received[i]; //in ms
+		m_logOutputFps->RedOutput(ss.str());
 		//capture a frame
 		if (received[i] == MSG_CAPTURE_FRAME)
 			m_bCaptureFrame = true;
@@ -855,7 +861,22 @@ LiveScanClient::HandleSocketReceived(string received, std::vector<int>& anything
 		//req last frame
 		else if (received[i] == MSG_REQUEST_LAST_FRAME)
 		{
-			anythingToSend.push_back(MSG_REQUEST_LAST_FRAME);
+			anythingToSend.push_back(MSG_REQUEST_LAST_FRAME); // only for this case I have implemented the stepAlgorithm
+			i++;
+			uchar stepA = received[i];
+			i++;
+			uchar stepB = received[i];
+			i++;
+			uchar stepC = received[i];
+			i++;
+			uchar stepD = received[i];
+
+			float stepAlgorithm = bytesToFloat(stepD, stepC, stepB, stepA);
+
+			if (stepAlgorithm > 0)
+				m_randomLosses = stepAlgorithm;
+
+			break;
 		}
 		//receive calibration data
 		else if (received[i] == MSG_RECEIVE_CALIBRATION)
@@ -898,7 +919,7 @@ void
 LiveScanClient::HandleSocketTransmit(std::vector<int> signalInfoForTx, fd_set write_fds)
 {
 	auto start = std::chrono::system_clock::now();
-	int _hdrSize = 13; // including all information (Note: This variable although it is applied in all frames, in this function it is used only for the cases where no frames or a signal was sent to the server (just to construct the header easily))
+	int _hdrSize = 17; // including all information (Note: This variable although it is applied in all frames, in this function it is used only for the cases where no frames or a signal was sent to the server (just to construct the header easily))
 
 	for (int ii = 0; ii < signalInfoForTx.size(); ii++)
 	{
@@ -1061,7 +1082,8 @@ LiveScanClient::SendFrame(vector<char> frameTx, int sockId)
 	m_pClientSocket.at(sockId)->SendBytes(frameTx.data(), frameTx.size());
 }
 
-void LiveScanClient::StoreFrame(Point3f *vertices, Point2f *mapping, RGB *color, vector<Body> &bodies, BYTE* bodyIndex)
+void 
+LiveScanClient::StoreFrame(Point3f *vertices, Point2f *mapping, RGB *color, vector<Body> &bodies, BYTE* bodyIndex)
 {
 	auto start = std::chrono::system_clock::now();
 	vector<Point3f> goodVertices;
@@ -1146,8 +1168,8 @@ void LiveScanClient::StoreFrame(Point3f *vertices, Point2f *mapping, RGB *color,
 	if (m_bConnected && goodVerticesShort.size() > 0 && m_pClientSocket.size() > 0)
 	{
 		uint32_t tsCreation = 0;
-		double randomDrop = rand();
-		double probRand = randomDrop / RAND_MAX;
+		float randomDrop = rand();
+		float probRand = randomDrop / RAND_MAX;
 		if (probRand > m_randomLosses)
 		{
 			CreateFramesReadyForTransmission(goodVerticesShort, goodColorPoints, tempBodies, finalVec, tsCreation);
@@ -1254,11 +1276,13 @@ LiveScanClient::CreateFramesReadyForTransmission(vector<Point3s> vertices, vecto
 
 	uint32_t ts_field = m_tsPointer->GetMillisecondsTs(m_offsetUtcClock); // 32-bit for carrying the timestamp
 	tsCreation = ts_field;
-	const int hdr_size = sizeof(size) + sizeof(iCompression) + sizeof(ts_field); // hdr = information about i) size ii) compression iii) timestamp
+	int step_field = 0;
+	const int hdr_size = sizeof(size) + sizeof(iCompression) + sizeof(step_field) + sizeof(ts_field); // hdr = information about i) size ii) compression iii) stepAlgorithm iv) timestamp
 	char header[hdr_size];
 	memcpy(header, (char*)& size, sizeof(size));
 	memcpy(header + sizeof(size), (char*)& iCompression, sizeof(iCompression));
-	memcpy(header + sizeof(size) + sizeof(iCompression), (char*)& ts_field, sizeof(ts_field));
+	memcpy(header + sizeof(size), (char*)& step_field, sizeof(step_field));
+	memcpy(header + sizeof(size) + sizeof(iCompression) + sizeof(step_field), (char*)& ts_field, sizeof(ts_field));
 
 	std::vector<char> headerVec(header, header + hdr_size);
 	finalVec.insert(finalVec.begin(), headerVec.begin(), headerVec.end());
@@ -1274,7 +1298,8 @@ LiveScanClient::CreateFramesReadyForTransmission(vector<Point3s> vertices, vecto
 	}
 }
 
-void LiveScanClient::ShowFPS()
+void 
+LiveScanClient::ShowFPS()
 {
 	if (m_hWnd)
 	{
@@ -1322,9 +1347,9 @@ void LiveScanClient::ShowFPS()
 			double _fps = 1000.0 * ((double)m_pktCtr / (_intervalMs));
 			uint32_t _droppedFrames = m_droppedFrame;
 			m_droppedFrame = 0;
-			stringstream ss;
-			ss << ts << "\t" << _intervalMs << "\t" << _fps << "\t" << m_randomLosses << "\t" << _droppedFrames; //in ms
-			m_logOutputFps->RedOutput(ss.str());
+			//stringstream ss;
+			//ss << ts << "\t" << _intervalMs << "\t" << _fps << "\t" << m_randomLosses << "\t" << _droppedFrames; //in ms
+			//m_logOutputFps->RedOutput(ss.str());
 			m_lastTsFps = _timeNow;
 			m_pktCtr = 0;
 		}
@@ -1353,7 +1378,8 @@ LiveScanClient::NtpThreadFunction()
 	}
 }
 
-void LiveScanClient::ReadIPFromFile()
+void 
+LiveScanClient::ReadIPFromFile()
 {
 	ifstream file;
 	file.open("lastIP.txt");
@@ -1366,7 +1392,19 @@ void LiveScanClient::ReadIPFromFile()
 	}
 }
 
-void LiveScanClient::WriteIPToFile()
+float 
+LiveScanClient::bytesToFloat(uchar b0, uchar b1, uchar b2, uchar b3)
+{
+	uchar byte_array[] = { b3, b2, b1, b0 };
+	float result;
+	std::copy(reinterpret_cast<const char*>(&byte_array[0]),
+		reinterpret_cast<const char*>(&byte_array[4]),
+		reinterpret_cast<char*>(&result));
+	return result;
+}
+
+void 
+LiveScanClient::WriteIPToFile()
 {
 	ofstream file;
 	file.open("lastIP.txt");
