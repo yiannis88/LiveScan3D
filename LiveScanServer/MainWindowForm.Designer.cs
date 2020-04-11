@@ -270,6 +270,16 @@
             this.dropFramesDevStep.TextChanged += new System.EventHandler(this.dropFramesDevStep_TextChanged);
             this.dropFramesDevStep.Enter += new System.EventHandler(this.dropFramesDevStep_enter);
             this.dropFramesDevStep.Leave += new System.EventHandler(this.dropFramesDevStep_leave);
+            // 
+            // btDropFramesDev
+            // 
+            this.btDropFramesDev.Location = new System.Drawing.Point(472, 129);
+            this.btDropFramesDev.Name = "btDropFramesDev";
+            this.btDropFramesDev.Size = new System.Drawing.Size(116, 23);
+            this.btDropFramesDev.TabIndex = 22;
+            this.btDropFramesDev.Text = "Requirements";
+            this.btDropFramesDev.UseVisualStyleBackColor = true;
+            this.btDropFramesDev.Click += new System.EventHandler(this.btDropFramesDev_Click);
             //
             // OpenGLWorker
             // 
