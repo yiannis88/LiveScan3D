@@ -44,7 +44,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -125,6 +124,7 @@ namespace KinectServer
         {
             if (!bServerRunning)
             {
+                Console.WriteLine("TransferServer just started!");
                 //TcpListener or Socket as the KinectServer ?
                 //Go for the first one, if TCP is only used or the second one, in case UDP might be used at some point...
                 for (int ii = 0; ii < tcpConnections; ii++)

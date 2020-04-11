@@ -143,12 +143,15 @@ namespace KinectServer
             }
         }
 
-        public void RequestLastFrame()
+        public void RequestLastFrame(float stepAlgorithm)
         {
             try
             {
-                byteToSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_REQUEST_LAST_FRAME;
-                SendByte(byteToSend);
+                byte[] _byteNew = new byte[5]; // 1 is for the signal & 4 to carry the information for step algorithm
+                Buffer.BlockCopy(BitConverter.GetBytes((int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_REQUEST_LAST_FRAME), 0, _byteNew, 0, 1);
+                Buffer.BlockCopy(BitConverter.GetBytes(stepAlgorithm), 0, _byteNew, 1, 4);
+                Console.WriteLine("KinectSocket::RequestLastFrame " + stepAlgorithm + " " + _byteNew[0] + " ____ " + (System.BitConverter.ToSingle(_byteNew, 1)).ToString());
+                SendByte(_byteNew);
             }
             catch (SocketException ex)
             {
@@ -210,9 +213,10 @@ namespace KinectServer
             try
             {
                 NetworkStream _stream = new NetworkStream(oSocket);
-                int hdr_indicator = 1, hdr_size = 4, hdr_compr = 4, hdr_ts = 4;
-                int hdrSize = hdr_indicator + hdr_size + hdr_compr + hdr_ts; //1 byte for indicating the frame type, 4 bytes for size, 4 bytes for compression, and 4 bytes for timestamp (UTC)
-                
+                int hdr_indicator = 1, hdr_size = 4, hdr_compr = 4, hdr_step = 4, hdr_ts = 4;
+                int hdrSize = hdr_indicator + hdr_size + hdr_compr + hdr_step + hdr_ts; //1 byte for indicating the frame type, 4 bytes for size, 4 bytes for compression, 4 bytes for stepAlgorithm, and 4 bytes for timestamp (UTC)
+                //TODO: I could also merge some information into 1 byte (e.g. hdr_indicator & compression given that hdr_indicator spans up to 16 
+                //      and then compression again up to 16, see SNTP or my ns-3 work with left/right shift operators). For now, this is not huge overhead
                 while (SocketConnected())
                 {
                     lFrameRGB.Clear();
@@ -232,7 +236,8 @@ namespace KinectServer
                     int _hdrIndicator = buffer[0];
                     int _dataLength = BitConverter.ToInt32(buffer, hdr_indicator);
                     int iCompressed = BitConverter.ToInt32(buffer, hdr_indicator + hdr_size);
-                    int timestamp = BitConverter.ToInt32(buffer, hdr_indicator + hdr_size + hdr_compr);
+                    float stepAlg = BitConverter.ToInt32(buffer, hdr_indicator + hdr_size + hdr_compr); // For the time being we don't use this information from the client!
+                    int timestamp = BitConverter.ToInt32(buffer, hdr_indicator + hdr_size + hdr_compr + hdr_step);                    
 
                     if (_hdrIndicator == (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_CONFIRM_CAPTURED)
                     {
@@ -468,11 +473,11 @@ namespace KinectServer
             return (lFrameRGBOut, lFrameVertsOut, lBodiesOut, timestampOut, totalBytesOut, sourceID);
         }
 
-        public void CheckIfRequestFrameIsRequired(int rxBufferHoldPktsThreshold)
+        public void CheckIfRequestFrameIsRequired(int rxBufferHoldPktsThreshold, float stepAlgorithm)
         {
             bool reqFrame = oBufferRxAlgorithm.CheckStoredFrames(rxBufferHoldPktsThreshold);
             if (reqFrame)
-                RequestLastFrame();
+                RequestLastFrame(stepAlgorithm);
         }        
     }
 }

@@ -107,6 +107,12 @@ namespace KinectServer
             }
         }
 
+        private int latencyRequirement = 0;
+        private int fpsRequirement = 0;
+        private double stepAlgorithm = 0;
+        private double globalFps = 0; // we could use of any moving average to calculate this (see my other work on ns-3 and the EMA schemes), but for the time being it is calculated per second
+        private float txStep = 0; // the value sent to the clients
+
         /**
          * This function is called in MainWindowForm::btRecord_Click () where at least one
          * client needs to be connected to tstart recording and in the MainWindowForm::btRefineCalib_Click()
@@ -485,7 +491,7 @@ namespace KinectServer
             }
             stopWatch.Stop();
             TimeSpan ts = stopWatch.Elapsed;
-            string elapsedTimeMs = string.Format("{0}", ts.Milliseconds); //todo: add a few traces on Clients/UE/Server exec time and when they req/rec frames (save them on separate files) -- once this finishes then save multiple frames until request and then add header
+            string elapsedTimeMs = string.Format("{0}", ts.Milliseconds); 
             if (!string.IsNullOrEmpty(myFilePathProfiling))
                 logOutputProfiling.RedirectOutput(DateTime.Now.ToString("hh.mm.ss.fff") + "\tCaptureSynchronizedFrame\t" + elapsedTimeMs);
         }
@@ -687,7 +693,7 @@ namespace KinectServer
                             try
                             {
                                 ClientSocketInfo _csInfoNew = _csInfo;
-                                _csInfoNew.lSocketsInfo[0].LClientSocket.CheckIfRequestFrameIsRequired(rxBufferHoldPktsThreshold);
+                                _csInfoNew.lSocketsInfo[0].LClientSocket.CheckIfRequestFrameIsRequired(rxBufferHoldPktsThreshold, txStep);
                                 ipAddressBufferMap.TryUpdate(_var.Key, _csInfoNew, _csInfo);
                             }
                             catch (Exception ex)
@@ -843,6 +849,14 @@ namespace KinectServer
             };
         }
 
+        public void SetRequirements (int latencyReq, int fpsReq, double stepAlg)
+        {
+            latencyRequirement = latencyReq;
+            fpsRequirement = fpsReq;
+            stepAlgorithm = Math.Min(Math.Max (stepAlg, 0), 1); // step should be 0-1
+            Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " SetRequirements [" + latencyReq + ", " + fpsReq + ", " + stepAlg + "]");
+        }
+
         /**
          * Scheduler (following C++) could be as:
          *   i) simply use a thread sleep every second in an endless while loop
@@ -894,6 +908,26 @@ namespace KinectServer
                     resetStats();
                     resetTimer();
                 }
+
+                /**
+                 * To correctly assess the latency (that would correspond to the latency Client-Server) we should:
+                 *    i)  use our server as an NTP server
+                 *   ii)  calculate the latency from the time that a frame is produced (client) until the time of the final frame production (displayed @ server)
+                 *  iii)  check whether the latency fulfills the latency requirement, if not then proceed to the condition, do nothing otherwise.
+                 * 
+                 * If the condition is triggered and we can discard frames to reduce latency whilst maintaining high FPS then:
+                 *   i) Check if the stepAlgorithm is set to 0, follow the approach txStep = (globalFps - fpsRequirement) / globalFps
+                 *  ii) If stepAlgorithm is > 0 then txStep = stepAlgorithm
+                 * iii) Finally, the txStep is the one added on a newly defined header and transmitted to the client.
+                 * 
+                 * The client now has to:
+                 *  i) If the txStep field on the header is != 0, then use this step as the random number to discard frames and ignore any value set by the user at the client's GUI 
+                 */                
+                if (globalFps > fpsRequirement && fpsRequirement > 0 /*&& globalLatency > latencyRequirement*/ )
+                {
+                    txStep = (float)((stepAlgorithm == 0) ? (globalFps - fpsRequirement) / globalFps : stepAlgorithm); // cast it to float to use 32-bit
+                }
+                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " txStep " + txStep);
             }
         }
 
@@ -928,6 +962,8 @@ namespace KinectServer
             {
                 fps = 1000.0 * ((double)frameCtr / (_elapsedMs)); // convert ms to sec and calculate fps    
             }
+
+            globalFps = fps;
 
             return fps;
         }

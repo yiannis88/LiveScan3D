@@ -41,6 +41,10 @@
             this.txtSeqName = new System.Windows.Forms.TextBox();
             this.btDebug = new System.Windows.Forms.Button();
             this.recordingWorker = new System.ComponentModel.BackgroundWorker();
+            this.dropFramesDevLatency = new System.Windows.Forms.TextBox();
+            this.dropFramesDevStep = new System.Windows.Forms.TextBox();
+            this.dropFramesDevFps = new System.Windows.Forms.TextBox();
+            this.btDropFramesDev = new System.Windows.Forms.Button();
             this.OpenGLWorker = new System.ComponentModel.BackgroundWorker();
             this.savingWorker = new System.ComponentModel.BackgroundWorker();
             this.updateWorker = new System.ComponentModel.BackgroundWorker();
@@ -231,6 +235,42 @@
             this.recordingWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.recordingWorker_DoWork);
             this.recordingWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.recordingWorker_RunWorkerCompleted);
             // 
+            // 
+            // DropFramesDev
+            // 
+            this.dropFramesDevLatency.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.dropFramesDevLatency.Location = new System.Drawing.Point(346, 129);
+            this.dropFramesDevLatency.MaxLength = 4;
+            this.dropFramesDevLatency.Name = "dropFramesDevLatency";
+            this.dropFramesDevLatency.Size = new System.Drawing.Size(35, 20);
+            this.dropFramesDevLatency.TabIndex = 19;
+            this.dropFramesDevLatency.Text = "Lat";
+            this.dropFramesDevLatency.TextChanged += new System.EventHandler(this.dropFramesDevLatency_TextChanged);
+            this.dropFramesDevLatency.Enter += new System.EventHandler(this.dropFramesDevLatency_enter);
+            this.dropFramesDevLatency.Leave += new System.EventHandler(this.dropFramesDevLatency_leave);
+            ///////////// 2nd requirement /////////////
+            this.dropFramesDevFps.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.dropFramesDevFps.Location = new System.Drawing.Point(386, 129);
+            this.dropFramesDevFps.MaxLength = 4;
+            this.dropFramesDevFps.Name = "dropFramesDevFps";
+            this.dropFramesDevFps.Size = new System.Drawing.Size(35, 20);
+            this.dropFramesDevFps.TabIndex = 20;
+            this.dropFramesDevFps.Text = "FPS";
+            this.dropFramesDevFps.TextChanged += new System.EventHandler(this.dropFramesDevFps_TextChanged);
+            this.dropFramesDevFps.Enter += new System.EventHandler(this.dropFramesDevFps_enter);
+            this.dropFramesDevFps.Leave += new System.EventHandler(this.dropFramesDevFps_leave);
+            ///////////// 3rd parameter algorithm step /////////////
+            this.dropFramesDevStep.ForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.dropFramesDevStep.Location = new System.Drawing.Point(426, 129);
+            this.dropFramesDevStep.MaxLength = 4;
+            this.dropFramesDevStep.Name = "dropFramesDevStep";
+            this.dropFramesDevStep.Size = new System.Drawing.Size(35, 20);
+            this.dropFramesDevStep.TabIndex = 21;
+            this.dropFramesDevStep.Text = "Step";
+            this.dropFramesDevStep.TextChanged += new System.EventHandler(this.dropFramesDevStep_TextChanged);
+            this.dropFramesDevStep.Enter += new System.EventHandler(this.dropFramesDevStep_enter);
+            this.dropFramesDevStep.Leave += new System.EventHandler(this.dropFramesDevStep_leave);
+            //
             // OpenGLWorker
             // 
             this.OpenGLWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.OpenGLWorker_DoWork);
@@ -933,6 +973,10 @@
             this.Controls.Add(this.lbSeqName);
             this.Controls.Add(this.txtSeqName);
             this.Controls.Add(this.btDebug);
+            this.Controls.Add(this.dropFramesDevLatency);
+            this.Controls.Add(this.dropFramesDevFps);
+            this.Controls.Add(this.dropFramesDevStep);
+            this.Controls.Add(this.btDropFramesDev);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.Name = "MainWindowForm";
@@ -976,6 +1020,10 @@
         private System.Windows.Forms.Label lbSeqName;
         private System.Windows.Forms.TextBox txtSeqName;
         private System.Windows.Forms.Button btDebug;
+        private System.Windows.Forms.TextBox dropFramesDevLatency;        
+        private System.Windows.Forms.TextBox dropFramesDevFps;
+        private System.Windows.Forms.TextBox dropFramesDevStep;
+        private System.Windows.Forms.Button btDropFramesDev;
         private System.ComponentModel.BackgroundWorker recordingWorker;                 
         private System.ComponentModel.BackgroundWorker OpenGLWorker;
         private System.ComponentModel.BackgroundWorker savingWorker;

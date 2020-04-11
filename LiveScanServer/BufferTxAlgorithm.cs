@@ -138,6 +138,10 @@ namespace KinectServer
 
         private byte[] CreateFrameForTransmission(List<float> lVerticesFrame, List<byte> lAllColor, int timestampFrame, int sourceID)
         {
+            /**
+             * Do we need to have the step algorithm here? This is the buffer for the UEs!!! :)
+             * To keep the same format though, I should have it here huh, and of course correctly modify the UE reception!
+             */ 
             int nVerticesToSend = lVerticesFrame.Count;
             int size = (sizeof(short) * nVerticesToSend) + (sizeof(byte) * nVerticesToSend);
             int hdr_indicator = 1, hdr_source = 1, hdr_size = 4, hdr_compr = 4, hdr_ts = 4;
@@ -145,6 +149,7 @@ namespace KinectServer
             int sizeBuffer = size + hdrSize; // whole packet size
             byte[] buffer = new byte[sizeBuffer];
             int compression = 0; //not really used
+            
             try
             {
                 short[] sVertices = Array.ConvertAll(lVerticesFrame.ToArray(), x => (short)(x * 1000));

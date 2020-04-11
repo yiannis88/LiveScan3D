@@ -71,7 +71,7 @@ private:
 	std::vector<float> m_vBounds;
 	int* m_portPool;
 	int m_tcpConn;
-	double m_randomLosses;
+	float m_randomLosses;
 	int m_sourceID;
 
 	std::vector<Point3s> m_vLastFrameVertices;
@@ -117,6 +117,7 @@ private:
 	void StoreFrame(Point3f* vertices, Point2f* mapping, RGB* color, vector<Body>& bodies, BYTE* bodyIndex);
 	void ShowFPS();
 	void ReadIPFromFile();
+	float bytesToFloat(uchar b0, uchar b1, uchar b2, uchar b3);
 	void WriteIPToFile();
 
 	LoggingInfo* m_logOutputTimers;
