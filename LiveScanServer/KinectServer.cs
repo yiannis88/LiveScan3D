@@ -61,12 +61,33 @@ namespace KinectServer
         public byte[] buffer = new byte[BufferSize];     // Receive buffer.     
     }
 
+    public class SourceStats
+    {
+        //public int SourceID { get; set; } //not necessary?
+        public int RxBytes { get; set; } = 0; // INTERMEDIATE VAR, USED DURING STATS CALCULATION
+        public int Frames { get; set; } = 0; // INTERMEDIATE VAR, USED DURING STATS CALCULATION
+
+        public double FPS { get; set; } = 0;
+        public double Mbps { get; set; } = 0;
+        public float Step { get; set; } = 0;
+
+        public double LatencySMA { get; set; } = 0; // Simple moving average
+        public double LatencyEMA { get; set; } = 0; // Exponential moving average
+
+        public void IterationReset()
+        {
+            RxBytes = 0;
+            Frames = 0;
+        }
+    }
+
     public class KinectServer
     {
         List<Socket> oServerSocket = new List<Socket>();
         List<int> oPortsPool = new List<int>(6) {48000, 48001, 48002, 48003, 48004, 48005 };
         int tcpConnections = 1;
         ConcurrentDictionary<IPAddress, ClientSocketInfo> ipAddressBufferMap = new ConcurrentDictionary<IPAddress, ClientSocketInfo>();
+        public readonly ConcurrentDictionary<int, SourceStats> sourceStats = new ConcurrentDictionary<int, SourceStats>();
         List<KinectSocket> oTotalClientSockets = new List<KinectSocket>();
 
         bool bServerRunning = false;
@@ -107,6 +128,12 @@ namespace KinectServer
             }
         }
 
+        private double _alpha = 0.5;
+        public double Alpha // for use in exponential moving average alpha, determines speed with which older values are disregarded (higher = quicker)
+        {
+            get => _alpha;
+            set => _alpha = Math.Max(Math.Min(value, 1.0), 0);
+        }
         private int latencyRequirement = 0;
         private int fpsRequirement = 0;
         private double stepAlgorithm = 0;
@@ -701,7 +728,16 @@ namespace KinectServer
                             try
                             {
                                 ClientSocketInfo _csInfoNew = _csInfo;
-                                _csInfoNew.lSocketsInfo[0].LClientSocket.CheckIfRequestFrameIsRequired(rxBufferHoldPktsThreshold, txStep);
+                                var step = 0F;
+                                if (_csInfoNew.lSocketsInfo[0].LClientSocket.SourceID != -1) //don't add a new stats object for -1, indicating no sourceID
+                                {
+                                    var stats = sourceStats.GetOrAdd( // get source stats object for source-specific step transmission
+                                        _csInfoNew.lSocketsInfo[0].LClientSocket.SourceID,
+                                        new SourceStats()
+                                    );
+                                    step = stats.Step;
+                                }
+                                _csInfoNew.lSocketsInfo[0].LClientSocket.CheckIfRequestFrameIsRequired(rxBufferHoldPktsThreshold, step);
                                 ipAddressBufferMap.TryUpdate(_var.Key, _csInfoNew, _csInfo);
                             }
                             catch (Exception ex)
@@ -886,11 +922,16 @@ namespace KinectServer
                 int _numSockets = oTotalClientSockets.Count;
                 int totalFrames = 0;
                 double totalMbps = 0;
-                bool _flagEarly = false;
+                bool _flagEarly = false; // FPS calculations wait for one second, breaks if not reached yet
 
                 string result = "";
                 for (int ii = 0; ii < _numSockets; ++ii)
                 {
+                    if (oTotalClientSockets[ii].SourceID == -1) continue; // SourceID has not been set yet, gets set on reception of frame
+
+                    var stats = sourceStats.GetOrAdd(oTotalClientSockets[ii].SourceID, new SourceStats());
+
+                    // FRAMES
                     int _framesClient = oTotalClientSockets[ii].lastFrameCtr + oTotalClientSockets[ii].storedFrameCtr;
                     double _fpsClient = Math.Round(GetFps(_framesClient), 2);
                     if (_fpsClient == -1.0)
@@ -898,9 +939,14 @@ namespace KinectServer
                         _flagEarly = true;
                         break;
                     }
+                    stats.Frames += _framesClient;
+
+                    //BANDWIDTH
                     int _rxBytesClient = oTotalClientSockets[ii].lastFrameRxBytes + oTotalClientSockets[ii].storedFrameRxBytes;
                     double _mbpsClient = Math.Round(GetMbps(_rxBytesClient), 2);
+                    stats.RxBytes += _rxBytesClient;
 
+                    //RESULTS
                     result += _fpsClient + "\t" + _mbpsClient + "\t";
                     totalFrames += _framesClient;
                     totalMbps += _mbpsClient;
@@ -908,6 +954,37 @@ namespace KinectServer
 
                 if (!_flagEarly)
                 {
+                    // Frames for all sockets have been collated, calculate stats for each source
+                    foreach (var source in sourceStats) 
+                    {
+                        source.Value.FPS = Math.Round(GetFps(source.Value.Frames), 2);
+                        source.Value.Mbps = Math.Round(GetMbps(source.Value.RxBytes), 2);
+
+                        // Below selects all currently buffered objects for source, orders by timestamp, selects network delay ready for averages
+                        var flattenedBuffer = oTotalClientSockets
+                            .Where((socket) => socket.SourceID == source.Key) // Pick sockets for current source
+                            .SelectMany((socket) => socket.oBufferRxAlgorithm.bufferedObjects) // select & flatten currently buffered objects
+                            .OrderBy((buffered) => buffered.Timestamp) // sort by timestamp
+                            .Select((buffered) => buffered.DelayToEnqueue)
+                            .ToList();
+
+                        // Does not limiting the number of objects analysed affect the average?
+
+                        if (flattenedBuffer.Count > 0)
+                        {
+                            source.Value.LatencySMA = flattenedBuffer.Average();
+                            source.Value.LatencyEMA = flattenedBuffer
+                                .Select((val) => (double)val)
+                                .Aggregate((Average, Next) => Alpha * Next + (1 - Alpha) * Average); // exponential moving average calculation https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+                        } else
+                        {
+                            source.Value.LatencySMA = 0;
+                            source.Value.LatencyEMA = 0;
+                        }
+
+                        source.Value.IterationReset(); // Reset intermediate vars (frames after fps calc) (bytes after Mbps calc)
+                    }
+
                     bandwidth = totalMbps;
                     double _totalFps = Math.Round(GetFps(totalFrames), 2);
                     double _displayedFps = Math.Round(GetFps(oMainWindowForm.GetDisplayedFrameCounter()), 2);
@@ -930,7 +1007,35 @@ namespace KinectServer
                  * 
                  * The client now has to:
                  *  i) If the txStep field on the header is != 0, then use this step as the random number to discard frames and ignore any value set by the user at the client's GUI 
-                 */                
+                 */
+                foreach (var source in sourceStats)
+                {
+                    if(stepAlgorithm > 0) // manual step will override dynamic calculations
+                    {
+                        source.Value.Step = (float) stepAlgorithm;
+                        continue;
+                    }
+
+                    if(fpsRequirement > 0 && latencyRequirement > 0)
+                    {
+                        // calculate balanced step
+                        continue;
+                    }
+
+                    if (fpsRequirement > 0)
+                    {
+                        // calculate fps constrained step
+                        continue;
+                    }
+
+                    if (latencyRequirement > 0)
+                    {
+                        // calculate latency constrained step
+                        continue;
+                    }
+
+                    source.Value.Step = 0;
+                }
                 if (globalFps > fpsRequirement && fpsRequirement > 0 /*&& globalLatency > latencyRequirement*/ )
                 {
                     txStep = (float)((stepAlgorithm == 0) ? (globalFps - fpsRequirement) / globalFps : stepAlgorithm); // cast it to float to use 32-bit

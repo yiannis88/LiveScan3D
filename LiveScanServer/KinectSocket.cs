@@ -29,7 +29,7 @@ namespace KinectServer
     public class KinectSocket
     {
         Socket oSocket;
-        BufferRxAlgorithm oBufferRxAlgorithm;
+        public BufferRxAlgorithm oBufferRxAlgorithm;
 
         byte[] byteToSend = new byte[1];
         public bool bFrameCaptured = false;
@@ -46,6 +46,8 @@ namespace KinectServer
         public List<byte> lFrameRGB = new List<byte>();
         public List<Single> lFrameVerts = new List<Single>();
         public List<Body> lBodies = new List<Body>();
+
+        public int SourceID { get; private set; } = -1; // for use in stats calculation, refers to last received ID from frame transmission, -1 for not set yet
 
         public event SocketChangedHandler eChanged;
         private bool debugFlag = true;
@@ -80,9 +82,9 @@ namespace KinectServer
         {
             IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
             if (clientIdSok > -1)
-                sSocketState = "Client: " + clientIdSok + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+                sSocketState = "Client: " + clientIdSok + " Source: " + SourceID + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
             else
-                sSocketState = "\tIP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+                sSocketState = "\tSource: " + SourceID + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
 
             UpdateSocketState();
         }
@@ -105,9 +107,9 @@ namespace KinectServer
             bCalibrated = false;
             IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
             if (clientIdSok > -1)
-                sSocketState = "Client: " + clientIdSok + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+                sSocketState = "Client: " + clientIdSok + " Source: " + SourceID + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
             else
-                sSocketState = "\tIP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+                sSocketState = "\tSource: " + SourceID + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
 
             byteToSend[0] = (int)MessageUtils.SIGNAL_MESSAGE_TYPE.MSG_CALIBRATE;
             SendByte(byteToSend);
@@ -295,7 +297,7 @@ namespace KinectServer
                     //Receive depth and color data
                     int startIdx = 0;
 
-                    int sourceID = buffer[startIdx];
+                    SourceID = buffer[startIdx];
                     startIdx += 1;
 
                     int n_vertices = BitConverter.ToInt32(buffer, startIdx);
@@ -363,7 +365,7 @@ namespace KinectServer
                     //here we need to queue packets 
                     if (_lFrameRGB.Count > 0)
                     {
-                        oBufferRxAlgorithm.Enqueue(_lFrameRGB, _lFrameVerts, _lBodies, timestamp, _dataLength, remotePort, localPort, tsOffsetFromUtcTime, sourceID);
+                        oBufferRxAlgorithm.Enqueue(_lFrameRGB, _lFrameVerts, _lBodies, timestamp, _dataLength, remotePort, localPort, tsOffsetFromUtcTime, SourceID);
                     }
                 }
             }
@@ -437,17 +439,17 @@ namespace KinectServer
             {
                 IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
                 if (clientIdSok > -1)
-                    sSocketState = "Client: " + clientIdSok + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = true";
+                    sSocketState = "Client: " + clientIdSok + " Source: " + SourceID + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = true";
                 else
-                    sSocketState = "\tIP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = true";
+                    sSocketState = "\tSource: " + SourceID + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = true";
             }
             else
             {
                 IPEndPoint _remoteIpEndPoint = oSocket.RemoteEndPoint as IPEndPoint;
                 if (clientIdSok > -1)
-                    sSocketState = "Client: " + clientIdSok + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+                    sSocketState = "Client: " + clientIdSok + " Source: " + SourceID + " IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
                 else
-                    sSocketState = "\tIP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
+                    sSocketState = "\tSource: " + SourceID + "IP: " + _remoteIpEndPoint.Address + " LocalPort: " + localPort + " RemotePort: " + remotePort + " Calibrated = false";
             }
 
             eChanged?.Invoke();

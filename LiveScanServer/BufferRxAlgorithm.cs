@@ -38,7 +38,7 @@ public class BufferRxAlgorithm
     int lastEnqueuedTs = 0;
     string bufferStatsL = null;
 
-    ConcurrentQueue<KinectServerBufferObject> bufferedObjects = new ConcurrentQueue<KinectServerBufferObject>();
+    public readonly ConcurrentQueue<KinectServerBufferObject> bufferedObjects = new ConcurrentQueue<KinectServerBufferObject>();
     LoggingInformation logInfo = new LoggingInformation();
     object stringOperationLock = new object();
 

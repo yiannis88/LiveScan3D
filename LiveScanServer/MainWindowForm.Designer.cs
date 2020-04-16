@@ -847,8 +847,7 @@
             this.tableLayoutPanel5.Controls.Add(this.ueConnectedLabel, 1, 0);
             this.tableLayoutPanel5.Location = new System.Drawing.Point(6, 19);
             this.tableLayoutPanel5.Name = "tableLayoutPanel5";
-            this.tableLayoutPanel5.RowCount = 2;
-            this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel5.RowCount = 1;
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel5.Size = new System.Drawing.Size(174, 60);
             this.tableLayoutPanel5.TabIndex = 0;
@@ -860,7 +859,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label8.Location = new System.Drawing.Point(3, 0);
             this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(81, 30);
+            this.label8.Size = new System.Drawing.Size(81, 60);
             this.label8.TabIndex = 2;
             this.label8.Text = "Currently Connected";
             this.label8.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -873,7 +872,7 @@
             this.ueConnectedLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ueConnectedLabel.Location = new System.Drawing.Point(90, 0);
             this.ueConnectedLabel.Name = "ueConnectedLabel";
-            this.ueConnectedLabel.Size = new System.Drawing.Size(81, 30);
+            this.ueConnectedLabel.Size = new System.Drawing.Size(81, 60);
             this.ueConnectedLabel.TabIndex = 3;
             this.ueConnectedLabel.Text = "False";
             this.ueConnectedLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -974,8 +973,8 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tableLayoutPanel6.ColumnCount = 2;
-            this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.45977F));
+            this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 69.54023F));
             this.tableLayoutPanel6.Controls.Add(this.label17, 0, 0);
             this.tableLayoutPanel6.Controls.Add(this.currentStepLabel, 1, 0);
             this.tableLayoutPanel6.Location = new System.Drawing.Point(6, 19);
@@ -992,9 +991,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label17.Location = new System.Drawing.Point(3, 0);
             this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(81, 60);
+            this.label17.Size = new System.Drawing.Size(47, 60);
             this.label17.TabIndex = 2;
-            this.label17.Text = "Current Step";
+            this.label17.Text = "Current Steps";
             this.label17.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // currentStepLabel
@@ -1003,11 +1002,11 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.currentStepLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.currentStepLabel.Location = new System.Drawing.Point(90, 0);
+            this.currentStepLabel.Location = new System.Drawing.Point(56, 0);
             this.currentStepLabel.Name = "currentStepLabel";
-            this.currentStepLabel.Size = new System.Drawing.Size(81, 60);
+            this.currentStepLabel.Size = new System.Drawing.Size(115, 60);
             this.currentStepLabel.TabIndex = 3;
-            this.currentStepLabel.Text = "0.0";
+            this.currentStepLabel.Text = "N/A";
             this.currentStepLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // MainWindowForm

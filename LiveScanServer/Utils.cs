@@ -13,9 +13,11 @@
 //        year={2015},
 //    }
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace KinectServer
 {
@@ -267,6 +269,77 @@ namespace KinectServer
             }
 
             return verts;
+        }
+    }
+
+    public class FixedQueue<T>
+    {
+        protected ConcurrentQueue<T> queue = new ConcurrentQueue<T>();
+        public T[] Items
+        {
+            get
+            {
+                return queue.ToArray();
+            }
+        }
+        public T[] ReversedItems
+        {
+            get
+            {
+                var items = queue.ToArray();
+                Array.Reverse(items);
+                return items;
+            }
+        }
+        public int Limit { get; set; } = 100;
+
+        public void Enqueue(T stat)
+        {
+            queue.Enqueue(stat);
+            while (queue.Count > Limit && queue.TryDequeue(out _));
+        }
+    }
+
+    public class StatsBufferQueue : FixedQueue<int>
+    {
+        private double _alpha = 0.5;
+        public double Alpha {
+            get => _alpha;
+            set => _alpha = Math.Max(Math.Min(value, 1.0), 0);
+        }
+
+        public int Sum
+        {
+            get
+            {
+                return queue.Sum();
+            }
+        }
+
+        public double EMA
+        {
+            get
+            {
+                if (queue.Count > 0)
+                    return queue
+                        //.Reverse()
+                        //.DefaultIfEmpty()
+                        .Select((val) => (double)val)
+                        .Aggregate((Average, Next) => Alpha * Next + (1 - Alpha) * Average);
+                else
+                    return 0;   
+            }
+        }
+
+        public double SMA
+        {
+            get
+            {
+                if (queue.Count > 0)
+                    return queue.Average();
+                else
+                    return 0;
+            }
         }
     }
 

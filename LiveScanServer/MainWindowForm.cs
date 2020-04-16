@@ -578,51 +578,21 @@ namespace KinectServer
 
         private void btDropFramesDev_Click (object sender, EventArgs e)
         {
+            int latencyRequirement = 0;
+            int fpsRequirement = 0;
+            double stepAlgorithm = 0;
+
             //here we want to get the text from the textboxes to set the requirements!
             if (dropFramesDevLatency.Text.Length > 0 && dropFramesDevLatency.Text != "Lat")
             {
-                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Alpha");
+                //Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Alpha");
                 if (Regex.IsMatch(dropFramesDevLatency.Text, @"^\d+$")) // return true if input is all numbers
                 {
                     try
                     {
-                        //get the 2nd requirement now
-                        if (dropFramesDevFps.Text.Length > 0 && dropFramesDevFps.Text != "FPS")
-                        {
-                            Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Beta");
-                            if (Regex.IsMatch(dropFramesDevFps.Text, @"^\d+$")) // return true if input is all numbers
-                            {
-                                try
-                                {
-                                    //get the step now, if zero then calculate on the fly, otherwise use the specified step
-                                    Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Ceta");
-                                    if (dropFramesDevStep.Text.Length > 0 && dropFramesDevStep.Text != "Step")
-                                    {
-                                        decimal _number3 = 0;                                        
-                                        if (decimal.TryParse(dropFramesDevStep.Text, out _number3)) // return true if input is all numbers
-                                        {
-                                            Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Delta");
-                                            try
-                                            {
-                                                int latencyRequirement = int.Parse(dropFramesDevLatency.Text);
-                                                int fpsRequirement = int.Parse(dropFramesDevFps.Text);
-                                                double stepAlgorithm = double.Parse(dropFramesDevStep.Text);
-                                                Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow [" + latencyRequirement + ", " + fpsRequirement + ", " + stepAlgorithm + "]");
-                                                oServer.SetRequirements(latencyRequirement, fpsRequirement, stepAlgorithm);
-                                            }
-                                            catch(FormatException er)
-                                            {
-                                                Console.WriteLine("Unable to parse the text box (Step) with error {0}.", er.Message);
-                                            }
-                                        }
-                                    }
-                                }
-                                catch (FormatException er)
-                                {
-                                    Console.WriteLine("Unable to parse the text box (FPS Requirement) with error {0}.", er.Message);
-                                }
-                            }
-                        }
+                        latencyRequirement = int.Parse(dropFramesDevLatency.Text);
+                        Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Latency: " + latencyRequirement);
+                        oServer.SetRequirements(latencyRequirement, 0, 0);
                     }
                     catch (FormatException er)
                     {
@@ -630,6 +600,47 @@ namespace KinectServer
                     }
                 }
             }
+
+            //get the 2nd requirement now
+            if (dropFramesDevFps.Text.Length > 0 && dropFramesDevFps.Text != "FPS")
+            {
+                //Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Beta");
+                if (Regex.IsMatch(dropFramesDevFps.Text, @"^\d+$")) // return true if input is all numbers
+                {
+                    try
+                    {
+                        fpsRequirement = int.Parse(dropFramesDevFps.Text);
+                        Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow FPS: " + fpsRequirement);
+                        oServer.SetRequirements(0, fpsRequirement, 0);
+                    }
+                    catch (FormatException er)
+                    {
+                        Console.WriteLine("Unable to parse the text box (FPS Requirement) with error {0}.", er.Message);
+                    }
+                }
+            }
+
+            //get the step now, if zero then calculate on the fly, otherwise use the specified step
+            if (dropFramesDevStep.Text.Length > 0 && dropFramesDevStep.Text != "Step")
+            {
+                decimal _number3 = 0;                                        
+                if (decimal.TryParse(dropFramesDevStep.Text, out _number3)) // return true if input is all numbers
+                {
+                    Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Delta");
+                    try
+                    {
+                        stepAlgorithm = double.Parse(dropFramesDevStep.Text);
+                        Console.WriteLine(DateTime.Now.ToString("hh.mm.ss.fff") + " MainWindow Step: " + stepAlgorithm);
+                        oServer.SetRequirements(0, 0, stepAlgorithm);
+                    }
+                    catch(FormatException er)
+                    {
+                        Console.WriteLine("Unable to parse the text box (Step) with error {0}.", er.Message);
+                    }
+                }
+            }
+
+            oServer.SetRequirements(latencyRequirement, fpsRequirement, stepAlgorithm);
         }
 
         private void liveLatencyPicker_ValueChanged(object sender, EventArgs e)
@@ -902,8 +913,13 @@ namespace KinectServer
                     ueConnectedLabel.Text = oTransferServer.UesCurrentlyConnected().ToString();
                 });
 
+                var stepsString = String.Join(", ", 
+                    oServer.sourceStats
+                        .OrderBy((source) => source.Key)
+                        .Select((source) => source.Value.Step)
+                    );
                 currentStepLabel.Invoke((MethodInvoker)delegate {
-                    currentStepLabel.Text = oServer.TxStep.ToString();
+                    currentStepLabel.Text = stepsString;
                 });
             }
 
