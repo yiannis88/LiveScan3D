@@ -338,8 +338,9 @@ namespace KinectServer
                     if (oTransferServer.UesCurrentlyConnected())
                         // TODO get real source ID's
                         oBufferAlgorithm.BufferedFrames(
-                                Transformer.Apply3DTransform(liveFrame.Vertices.ToList(), Transformer.GetYRotationTransform(180)), 
-                                liveFrame.RGB.ToList(), 
+                                liveFrame.Vertices.Apply3DTransform(Transformer.GetYRotationTransform(180)).ToList(), 
+                                // Above rotation required to fix weird presentation issue on mobile app
+                                liveFrame.RGB, 
                                 _outMinTimestamp, 
                                 _tsOffsetFromUtcTime, 
                                 _sourceID
@@ -355,8 +356,8 @@ namespace KinectServer
                         if (oTransferServer.UesCurrentlyConnected())
                             // TODO get real source ID's
                             oBufferAlgorithm.BufferedFrames(
-                                    Transformer.Apply3DTransform(localFrame.Vertices.ToList(), Transformer.GetYRotationTransform(180)), 
-                                    localFrame.RGB.ToList(), 
+                                    localFrame.Vertices.Apply3DTransform(Transformer.GetYRotationTransform(180)).ToList(), 
+                                    localFrame.RGB, 
                                     _outMinTimestamp, 
                                     _tsOffsetFromUtcTime, 
                                     100 // dummy source ID

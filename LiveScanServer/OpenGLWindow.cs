@@ -16,8 +16,8 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 enum ECameraMode
 {
@@ -400,32 +400,6 @@ namespace KinectServer
             MousePrevious.Y = e.Y;
         }
 
-        private int FramePointCount
-        {
-            get
-            {
-                int count = 0;
-                foreach (Source source in sources.Sources)
-                {
-                    count += source.Frame.Vertices.Count / 3;
-                }
-                return count;
-            }
-        }
-
-        private int FrameBodyCount
-        {
-            get
-            {
-                int count = 0;
-                foreach (Source source in sources.Sources)
-                {
-                    count += source.Frame.Bodies.Count;
-                }
-                return count;
-            }
-        }
-
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             if ((DateTime.Now - tFPSUpdateTimer).Seconds >= 1)
@@ -440,10 +414,14 @@ namespace KinectServer
             {
                 lock (settings)
                 {
-                    var _sources = sources.Sources; // take copy of frames
+                    var _frames = sources.Sources.Select((source) => source.Frame).ToArray(); // take copy of frames for thread-safety
                     bool bShowSkeletons = settings.bShowSkeletons;
 
-                    PointCount = FramePointCount;
+                    PointCount = _frames.Aggregate(
+                                    0, //initial value
+                                    (Sum, Next) => Sum + Next.Vertices.Count, //sum vertices
+                                    (Final) => Final / 3 // vertices are stored individually, divide by 3D for point count
+                                );
                     LineCount = 0;
                     if (bDrawMarkings)
                     {
@@ -454,18 +432,17 @@ namespace KinectServer
                         //cameras
                         LineCount += cameraPoses.Count * 3;
                         if (bShowSkeletons)
-                            LineCount += 24 * FrameBodyCount;
+                            LineCount += 24 * _frames.Aggregate(0, (Sum, Next) => Sum + Next.Bodies.Count);
                     }
 
                     VBO = new VertexC4ubV3f[PointCount + 2 * LineCount];
 
                     int lastFrameCount = 0;
                     // iterate through connected sources last frames
-                    foreach (Source source in _sources)
+                    foreach (Frame clientFrame in _frames)
                     {
-                        var clientFrame = source.Frame;
                         // get and apply transformation to correctly locate and orientate in space
-                        var verticesToDisplay = Transformer.Apply3DTransform(clientFrame.Vertices, transformer.GetSourceTransform(clientFrame.SourceID));
+                        var verticesToDisplay = clientFrame.Vertices.Apply3DTransform(transformer.GetSourceTransform(clientFrame.SourceID)).ToList();
                         var vertexCount = verticesToDisplay.Count / 3;
 
                         for (int i = 0; i < vertexCount; i++)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace KinectServer
@@ -24,29 +25,16 @@ namespace KinectServer
         public int CleanerInterval { get; set; } // milliseconds
         public int CleanerThreshold { get; set; } // seconds
 
-        public ICollection<int> SourceIDs
-        {
-            get
-            {
-                return sources.Keys;
-            }
-        }
-
-        public ICollection<Source> Sources
-        {
-            get
-            {
-                return sources.Values;
-            }
-        }
-
-        public ConcurrentDictionary<int, Source> Dictionary
-        {
-            get
-            {
-                return sources;
-            }
-        }
+        public ConcurrentDictionary<int, Source> Dictionary => sources;
+        public ICollection<int> SourceIDs => sources.Keys;
+        public ICollection<Source> Sources => sources.Values; 
+        public int Count => sources.Count;
+        public int BodyCount => sources.Values.Aggregate(0, (Sum, Next) => Sum + Next.Frame.Bodies.Count);
+        public int PointCount => sources.Values.Aggregate(
+                    0, //initial value
+                    (Sum, Next) => Sum + Next.Frame.Vertices.Count, //sum vertices
+                    (Final) => Final / 3 // vertices are stored individually, divide by 3D for point count
+                );
 
         public void AddFrame(Frame frame)
         {
@@ -81,14 +69,6 @@ namespace KinectServer
             return result;
         }
 
-        public int Count
-        {
-            get
-            {
-                return sources.Count;
-            }
-        }
-
         public void StartCleaner()
         {
             if (cleanerThread != null)
@@ -116,14 +96,7 @@ namespace KinectServer
             cleanerToCancel = true;
         }
 
-        public bool IsCleaning
-        {
-            get
-            {
-                return cleanerThread != null && cleanerThread.IsAlive && !cleanerToCancel;
-            }
-        }
-
+        public bool IsCleaning => cleanerThread != null && cleanerThread.IsAlive && !cleanerToCancel;
         protected void Clean()
         {
             while (!cleanerToCancel)

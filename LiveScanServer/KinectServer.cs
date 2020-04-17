@@ -957,8 +957,8 @@ namespace KinectServer
                     // Frames for all sockets have been collated, calculate stats for each source
                     foreach (var source in sourceStats) 
                     {
-                        source.Value.FPS = Math.Round(GetFps(source.Value.Frames), 2);
-                        source.Value.Mbps = Math.Round(GetMbps(source.Value.RxBytes), 2);
+                        source.Value.FPS = GetFps(source.Value.Frames);
+                        source.Value.Mbps = GetMbps(source.Value.RxBytes);
 
                         // Below selects all currently buffered objects for source, orders by timestamp, selects network delay ready for averages
                         var flattenedBuffer = oTotalClientSockets
@@ -973,9 +973,7 @@ namespace KinectServer
                         if (flattenedBuffer.Count > 0)
                         {
                             source.Value.LatencySMA = flattenedBuffer.Average();
-                            source.Value.LatencyEMA = flattenedBuffer
-                                .Select((val) => (double)val)
-                                .Aggregate((Average, Next) => Alpha * Next + (1 - Alpha) * Average); // exponential moving average calculation https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+                            source.Value.LatencyEMA = flattenedBuffer.Aggregate(0d, (Average, Next) => Alpha * Next + (1 - Alpha) * Average); // exponential moving average calculation https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
                         } else
                         {
                             source.Value.LatencySMA = 0;
