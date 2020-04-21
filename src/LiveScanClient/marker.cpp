@@ -15,8 +15,6 @@
 #include "marker.h"
 #include <opencv2/opencv.hpp>
 
-using namespace std;
-
 MarkerDetector::MarkerDetector()
 {
 	nMinSize = 100;
@@ -277,7 +275,7 @@ int MarkerDetector::GetCode(cv::Mat &img, vector<cv::Point2f> points, vector<cv:
 void MarkerDetector::CornersSubPix(vector<cv::Point2f> &corners, vector<cv::Point> contour, bool order)
 {
 	int *indices = new int[corners.size()];
-	
+	memset(indices, 0, corners.size());
 	for (unsigned int i = 0; i < corners.size(); i++)
 	{
 		for (unsigned int j = 0; j < contour.size(); j++)
@@ -327,10 +325,11 @@ void MarkerDetector::CornersSubPix(vector<cv::Point2f> &corners, vector<cv::Poin
 	}
 
 	vector<cv::Point2f> corners2;
-	for (unsigned int i = corners.size() - 1; i < 2 * corners.size() - 1; i++)
+	for (size_t i = corners.size() - 1; i < 2 * corners.size() - 1; i++)
 		corners2.push_back(GetIntersection(lines[(i + 1) % corners.size()], lines[i % corners.size()]));
 
 	corners = corners2;
+	delete[] indices;
 }
 
 cv::Point2f MarkerDetector::GetIntersection(cv::Vec4f lin1, cv::Vec4f lin2)
